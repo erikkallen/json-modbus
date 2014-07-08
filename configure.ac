@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.60])
-AC_INIT(modbus_reader, 1.0.0, corpeters@incas3.eu)
+AC_INIT(sunsaver_reader, 1.0.0, corpeters@incas3.eu)
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign])
