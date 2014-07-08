@@ -46,7 +46,7 @@ AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memmove memset])
 
-AC_CONFIG_SRCDIR([src/modbus_reader.c])
+AC_CONFIG_SRCDIR([src])
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_CONFIG_HEADERS([src/config.h])
 

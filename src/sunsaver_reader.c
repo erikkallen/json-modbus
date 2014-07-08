@@ -24,7 +24,7 @@ struct {
 	char name[50];
 	float fval;
 	int32_t ival;
-	uint8_t type;,
+	uint8_t type;
 	char unit[10];
 	double conversion;
 	uint16_t address;

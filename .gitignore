@@ -45,4 +45,4 @@ config.status
 *.i*86
 *.x86_64
 *.hex
-src/modbus_reader
+src/sunsaver_reader
