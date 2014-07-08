@@ -16,169 +16,83 @@ float modbus_get_float_cdab(const uint16_t *src);
 
 #define ADDR_TYPE_FLOAT  2 
 #define ADDR_TYPE_WORD  1
+#define ADDR_TYPE_SWORD  2
+#define ADDR_TYPE_LONG  2
 
 
 struct {
 	char name[50];
 	float fval;
-	int ival;
-	int type;
+	int32_t ival;
+	uint8_t type;,
+	char unit[10];
+	double conversion;
 	uint16_t address;
 } address_list[] = {
 	{
-		.name="rtcmilliseconds",
-		.address=1001,
+		.name="battery_volts",
+		.address=0x0008,
+		.unit="V",
+		.conversion=0.00305175781,
+		.type = ADDR_TYPE_WORD,
+	},
+	{
+		.name="battery_array_volts",
+		.address=0x0009,
+		.unit="V",
+		.conversion=0.00305175781,
 		.type = ADDR_TYPE_WORD
 	},
 	{
-		.name="rtcseconds",
-		.address=1002,
+		.name="load_volts",
+		.address=0x000A,
+		.unit="V",
+		.conversion=0.00305175781,
 		.type = ADDR_TYPE_WORD
 	},
 	{
-		.name="rtcminutes",
-		.address=1003,
+		.name="charging_current",
+		.address=0x000B,
+		.unit="A",
+		.conversion=0.00241577148,
 		.type = ADDR_TYPE_WORD
 	},
 	{
-		.name="rtchours",
-		.address=1004,
-		.type = ADDR_TYPE_WORD
-	},
-	{
-		.name="rtcdays",
-		.address=1005,
-		.type = ADDR_TYPE_WORD
-	}
-	,
-	{
-		.name="rtcmonths",
-		.address=1007,
-		.type = ADDR_TYPE_WORD
-	}
-	,
-	{
-		.name="rtcyears",
-		.address=1008,
+		.name="load_current",
+		.address=0x000C,
+		.unit="A",
+		.conversion=0.00241577148,
 		.type = ADDR_TYPE_WORD
 	}
 	,
 	{
-		.name="temperature",
-		.address=6668,
-		.type = ADDR_TYPE_FLOAT
+		.name="ambient_temp",
+		.address=0x000F,
+		.unit="°C",
+		.conversion=1,
+		.type = ADDR_TYPE_SWORD
 	}
 	,
 	{
-		.name="flow",
-		.address=6686,
-		.type = ADDR_TYPE_FLOAT
-	},
-	{
-		.name="reverse_flow",
-		.address=6688,
-		.type = ADDR_TYPE_FLOAT
-	},
-	{
-		.name="pressure-mv_ext_input",
-		.address=6692,
-		.type = ADDR_TYPE_FLOAT
-	},
-	{
-		.name="ph",
-		.address=6698,
-		.type = ADDR_TYPE_FLOAT
-	},
-	{
-		.name="orp",
-		.address=6704,
-		.type = ADDR_TYPE_FLOAT
-	},
-	{
-		.name="conductivity",
-		.address=6710,
-		.type = ADDR_TYPE_FLOAT
-	},
-	{
-		.name="turbidity",
-		.address=6716,
-		.type = ADDR_TYPE_FLOAT
-	},
-	{
-		.name="colour",
-		.address=6722,
-		.type = ADDR_TYPE_FLOAT
-	}	,
-	{
-		.name="free_chlorine",
-		.address=6728,
-		.type = ADDR_TYPE_FLOAT
+		.name="ah_charge",
+		.address=0x0015,
+		.unit="Ah",
+		.conversion=0.1,
+		.type = ADDR_TYPE_LONG
 	}
 	,
 	{
-		.name="spare_chlorine",
-		.address=6734,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="mono-chloramine",
-		.address=6740,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="dissolved_oxygen",
-		.address=6746,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="ise",
-		.address=6752,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="external_flow",
-		.address=6776,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="minutes",
-		.address=6648,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="hours",
-		.address=6650,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="day",
-		.address=6652,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="month",
-		.address=6656,
-		.type = ADDR_TYPE_FLOAT
-	}
-	,
-	{
-		.name="year",
-		.address=6658,
-		.type = ADDR_TYPE_FLOAT
+		.name="ah_load",
+		.address=0x001D,
+		.unit="Ah",
+		.conversion=0.1,
+		.type = ADDR_TYPE_LONG
 	}
 };
 #define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
 
 int main() {
-	ctx = modbus_new_rtu("/dev/tty.usbserial-FTVXKTF3", 19200, 'N', 8, 1);
+	ctx = modbus_new_rtu("/dev/tty.usbserial-FTVXKTF3", 9600, 'N', 8, 2);
 	if (ctx == NULL) {
 	    fprintf(stderr, "Unable to create the libmodbus context\n");
 	    return -1;
@@ -214,6 +128,14 @@ int main() {
 			}
 			if (address_list[i].type==ADDR_TYPE_WORD) {
 				address_list[i].ival = (unsigned int)tab_reg[0];
+				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
+			}
+			if (address_list[i].type==ADDR_TYPE_SWORD) {
+				address_list[i].ival = (int)tab_reg[0];
+				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
+			}
+			if (address_list[i].type==ADDR_TYPE_LONG) {
+				address_list[i].ival = (int32_t)(tab_reg[1]<<16)|tab_reg[1];
 				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
 			}
 		}
