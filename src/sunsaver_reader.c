@@ -92,7 +92,7 @@ struct {
 #define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
 
 int main() {
-	ctx = modbus_new_rtu("/dev/tty.usbserial-FTVXKTF3", 9600, 'N', 8, 2);
+	ctx = modbus_new_rtu("/dev/ttyS0", 9600, 'N', 8, 2);
 	if (ctx == NULL) {
 	    fprintf(stderr, "Unable to create the libmodbus context\n");
 	    return -1;
@@ -149,6 +149,12 @@ int main() {
 		}
 		if (address_list[i].type==ADDR_TYPE_WORD) {
 			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival);
+		}
+		if (address_list[i].type==ADDR_TYPE_SWORD) {
+			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival);
+		}
+		if (address_list[i].type==ADDR_TYPE_LONG) {
+			printf("\t\t\"%s\":%lu",address_list[i].name,address_list[i].ival);
 		}
 		// Last item in list
 		if (i != address_list_size - 1) {
