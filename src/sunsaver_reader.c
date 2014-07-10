@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	
 	
 	fprintf(stderr, "Connected to: %s\n",args_info.tty_arg);
-	ctx = modbus_new_rtu(args_info.tty_arg, 19200, 'N', 8, 1);
+	ctx = modbus_new_rtu(args_info.tty_arg, 9600, 'N', 8, 2);
 	if (ctx == NULL) {
 	    fprintf(stderr, "Unable to create the libmodbus context\n");
 	    return -1;
