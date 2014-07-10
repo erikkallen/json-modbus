@@ -39,7 +39,7 @@ struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
-  char * tty_arg;	/**< @brief Serial port to which the sunsaver is connected. (default='/dev/ttyS0').  */
+  char * tty_arg;	/**< @brief Serial port to which the sunsaver is connected. (default='/dev/ttyS1').  */
   char * tty_orig;	/**< @brief Serial port to which the sunsaver is connected. original value given at command line.  */
   const char *tty_help; /**< @brief Serial port to which the sunsaver is connected. help description.  */
   int interval_arg;	/**< @brief Time between measurements in seconds (default='0').  */

@@ -36,7 +36,7 @@ const char *gengetopt_args_info_description = "";
 const char *gengetopt_args_info_help[] = {
   "  -h, --help          Print help and exit",
   "  -V, --version       Print version and exit",
-  "  -t, --tty=STRING    Serial port to which the sunsaver is connected.\n                        (default=`/dev/ttyS0')",
+  "  -t, --tty=STRING    Serial port to which the sunsaver is connected.\n                        (default=`/dev/ttyS1')",
   "  -i, --interval=INT  Time between measurements in seconds  (default=`0')",
   "  -d, --debug         Show protocol debug information  (default=off)",
     0
@@ -75,7 +75,7 @@ static
 void clear_args (struct gengetopt_args_info *args_info)
 {
   FIX_UNUSED (args_info);
-  args_info->tty_arg = gengetopt_strdup ("/dev/ttyS0");
+  args_info->tty_arg = gengetopt_strdup ("/dev/ttyS1");
   args_info->tty_orig = NULL;
   args_info->interval_arg = 0;
   args_info->interval_orig = NULL;
@@ -502,7 +502,7 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->tty_arg), 
                &(args_info->tty_orig), &(args_info->tty_given),
-              &(local_args_info.tty_given), optarg, 0, "/dev/ttyS0", ARG_STRING,
+              &(local_args_info.tty_given), optarg, 0, "/dev/ttyS1", ARG_STRING,
               check_ambiguity, override, 0, 0,
               "tty", 't',
               additional_error))
