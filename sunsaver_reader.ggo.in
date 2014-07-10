@@ -1,0 +1,12 @@
+package "@PACKAGE_NAME@"
+version "@PACKAGE_VERSION@"
+purpose "This application reads the output from the weather station and sends it via json to the given ip address."
+#usage ""
+#description "This application reads the output from the weather station and sends it via json to the given ip address."
+#versiontext "<versiontext>"
+ 
+args "<command line options>"	
+
+option "tty" t "Serial port to which the sunsaver is connected." default="/dev/ttyS0" string optional
+option "interval" i "Time between measurements in seconds" default="0" int optional
+option "debug" d "Show protocol debug information" flag off

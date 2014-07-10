@@ -3,22 +3,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <errno.h>
-
-modbus_t *ctx;
+#include "cmdline.h"
+#include <signal.h>
 
 modbus_t *ctx;
 uint16_t tab_reg[64];
 int rc;
 int errno;
 float modbus_get_float_cdab(const uint16_t *src);
-
+bool running = true;
+bool exit_now = false;
 
 #define ADDR_TYPE_FLOAT  2 
 #define ADDR_TYPE_WORD  1
 #define ADDR_TYPE_SWORD  2
 #define ADDR_TYPE_LONG  2
 
+struct gengetopt_args_info args_info;
 
 struct {
 	char name[50];
@@ -91,14 +94,41 @@ struct {
 };
 #define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
 
-int main() {
-	ctx = modbus_new_rtu("/dev/ttyS0", 9600, 'N', 8, 2);
+
+static void catch_function(int signo) {
+	if (exit_now) {
+		fprintf(stderr,"Exiting now!\n");
+		modbus_close(ctx);
+		modbus_free(ctx);
+		exit(-1);
+	} else {
+	    if (signo == SIGINT) {
+			fprintf(stderr,"Exiting nicely\n");
+	    	running = false;
+			exit_now = true;
+	    }
+	}
+    
+}
+
+
+int main(int argc, char **argv) {
+    if (signal(SIGINT, catch_function) == SIG_ERR) {
+        fprintf(stderr,"An error occurred while setting a signal handler.\n");
+        return EXIT_FAILURE;
+    }
+	/* let's call our cmdline parser */
+    if (cmdline_parser (argc, argv, &args_info) != 0) exit(1);
+	
+	
+	fprintf(stderr, "Connected to: %s\n",args_info.tty_arg);
+	ctx = modbus_new_rtu(args_info.tty_arg, 19200, 'N', 8, 1);
 	if (ctx == NULL) {
 	    fprintf(stderr, "Unable to create the libmodbus context\n");
 	    return -1;
 	}
 	modbus_set_slave(ctx, 1);
-	modbus_set_debug(ctx,FALSE);
+	modbus_set_debug(ctx,args_info.debug_flag);
 	struct timeval rt;
 	rt.tv_sec=5;
 	rt.tv_usec=0;
@@ -154,7 +184,7 @@ int main() {
 			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival);
 		}
 		if (address_list[i].type==ADDR_TYPE_LONG) {
-			printf("\t\t\"%s\":%lu",address_list[i].name,address_list[i].ival);
+			printf("\t\t\"%s\":%d",address_list[i].name,address_list[i].ival);
 		}
 		// Last item in list
 		if (i != address_list_size - 1) {

@@ -14,7 +14,7 @@ Makefile.in
 stamp-h1
 .deps
 Makefile
-*.in
+config.h.in*
 config.log
 config.status
 
