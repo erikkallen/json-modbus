@@ -135,7 +135,7 @@ int main() {
 				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
 			}
 			if (address_list[i].type==ADDR_TYPE_LONG) {
-				address_list[i].ival = (int32_t)(tab_reg[1]<<16)|tab_reg[1];
+				address_list[i].ival = (((int32_t)tab_reg[1])<<16)|tab_reg[1];
 				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
 			}
 		}
