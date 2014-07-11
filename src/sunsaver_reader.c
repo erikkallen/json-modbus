@@ -18,16 +18,38 @@ bool exit_now = false;
 
 #define ADDR_TYPE_FLOAT  2 
 #define ADDR_TYPE_WORD  1
-#define ADDR_TYPE_SWORD  2
-#define ADDR_TYPE_LONG  2
+#define ADDR_TYPE_SWORD  3
+#define ADDR_TYPE_LONG  4
 
 struct gengetopt_args_info args_info;
+
+struct addr_type {
+	int type;
+	int size;
+};
+
+struct addr_type a_type_float = {
+	.type = ADDR_TYPE_FLOAT;
+	.size = 2;
+}
+struct addr_type a_type_word = {
+	.type = ADDR_TYPE_WORD;
+	.size = 1;
+}
+struct addr_type a_type_sword = {
+	.type = ADDR_TYPE_SWORD;
+	.size = 1;
+}
+struct addr_type a_type_long = {
+	.type = ADDR_TYPE_LONG;
+	.size = 2;
+}
 
 struct {
 	char name[50];
 	float fval;
 	int32_t ival;
-	uint8_t type;
+	struct addr_type type;
 	char unit[10];
 	double conversion;
 	uint16_t address;
@@ -37,35 +59,35 @@ struct {
 		.address=0x0008,
 		.unit="V",
 		.conversion=0.00305175781,
-		.type = ADDR_TYPE_WORD,
+		.type = a_type_word,
 	},
 	{
 		.name="battery_array_volts",
 		.address=0x0009,
 		.unit="V",
 		.conversion=0.00305175781,
-		.type = ADDR_TYPE_WORD
+		.type = a_type_word
 	},
 	{
 		.name="load_volts",
 		.address=0x000A,
 		.unit="V",
 		.conversion=0.00305175781,
-		.type = ADDR_TYPE_WORD
+		.type = a_type_word
 	},
 	{
 		.name="charging_current",
 		.address=0x000B,
 		.unit="A",
 		.conversion=0.00241577148,
-		.type = ADDR_TYPE_WORD
+		.type = a_type_word
 	},
 	{
 		.name="load_current",
 		.address=0x000C,
 		.unit="A",
 		.conversion=0.00241577148,
-		.type = ADDR_TYPE_WORD
+		.type = a_type_word
 	}
 	,
 	{
@@ -73,7 +95,7 @@ struct {
 		.address=0x000F,
 		.unit="°C",
 		.conversion=1,
-		.type = ADDR_TYPE_SWORD
+		.type = a_type_sword
 	}
 	,
 	{
@@ -81,7 +103,7 @@ struct {
 		.address=0x0015,
 		.unit="Ah",
 		.conversion=0.1,
-		.type = ADDR_TYPE_LONG
+		.type = a_type_long
 	}
 	,
 	{
@@ -89,7 +111,7 @@ struct {
 		.address=0x001D,
 		.unit="Ah",
 		.conversion=0.1,
-		.type = ADDR_TYPE_LONG
+		.type = a_type_long
 	}
 };
 #define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
@@ -152,19 +174,19 @@ int main(int argc, char **argv) {
 		    //return -1;
 		} else {
 			fprintf(stderr, "Address: %d success\n",address_list[i].address);
-			if (address_list[i].type==ADDR_TYPE_FLOAT) {
+			if (address_list[i].type.type==ADDR_TYPE_FLOAT) {
 				address_list[i].fval = (float)modbus_get_float_cdab(tab_reg);
 				fprintf(stderr, "%s: %f\n", address_list[i].name, address_list[i].fval);
 			}
-			if (address_list[i].type==ADDR_TYPE_WORD) {
+			if (address_list[i].type.type==ADDR_TYPE_WORD) {
 				address_list[i].ival = (unsigned int)tab_reg[0];
 				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
 			}
-			if (address_list[i].type==ADDR_TYPE_SWORD) {
+			if (address_list[i].type.type==ADDR_TYPE_SWORD) {
 				address_list[i].ival = (int)tab_reg[0];
 				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
 			}
-			if (address_list[i].type==ADDR_TYPE_LONG) {
+			if (address_list[i].type.type==ADDR_TYPE_LONG) {
 				address_list[i].ival = (((int32_t)tab_reg[1])<<16)|tab_reg[1];
 				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
 			}
@@ -174,17 +196,17 @@ int main(int argc, char **argv) {
 	printf("{\n");
 	printf("\t\"water_sensor\": {\n");
 	for (int i=0;i<address_list_size;i++) {
-		if (address_list[i].type==ADDR_TYPE_FLOAT) {
-			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].fval);
+		if (address_list[i].type.type==ADDR_TYPE_FLOAT) {
+			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].fval * address_list[i].conversion);
 		}
-		if (address_list[i].type==ADDR_TYPE_WORD) {
-			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival);
+		if (address_list[i].type.type==ADDR_TYPE_WORD) {
+			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival * address_list[i].conversion);
 		}
-		if (address_list[i].type==ADDR_TYPE_SWORD) {
-			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival);
+		if (address_list[i].type.type==ADDR_TYPE_SWORD) {
+			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival * address_list[i].conversion);
 		}
-		if (address_list[i].type==ADDR_TYPE_LONG) {
-			printf("\t\t\"%s\":%d",address_list[i].name,address_list[i].ival);
+		if (address_list[i].type.type==ADDR_TYPE_LONG) {
+			printf("\t\t\"%s\":%d",address_list[i].name,address_list[i].ival * address_list[i].conversion);
 		}
 		// Last item in list
 		if (i != address_list_size - 1) {
