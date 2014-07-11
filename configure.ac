@@ -47,7 +47,7 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memmove memset])
 
 AC_CONFIG_SRCDIR([src])
-AC_CONFIG_FILES([Makefile src/Makefile sunsaver_reader.ggo])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile sunsaver_reader.ggo])
 AC_CONFIG_HEADERS([src/config.h])
 
 ##########################################################################

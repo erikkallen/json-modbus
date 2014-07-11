@@ -29,23 +29,23 @@ struct addr_type {
 };
 
 struct addr_type a_type_float = {
-	.type = ADDR_TYPE_FLOAT;
-	.size = 2;
-}
+	.type = ADDR_TYPE_FLOAT,
+	.size = 2
+};
 struct addr_type a_type_word = {
-	.type = ADDR_TYPE_WORD;
-	.size = 1;
-}
+	.type = ADDR_TYPE_WORD,
+	.size = 1
+};
 struct addr_type a_type_sword = {
-	.type = ADDR_TYPE_SWORD;
-	.size = 1;
-}
+	.type = ADDR_TYPE_SWORD,
+	.size = 1
+};
 struct addr_type a_type_long = {
-	.type = ADDR_TYPE_LONG;
-	.size = 2;
-}
+	.type = ADDR_TYPE_LONG,
+	.size = 2
+};
 
-struct {
+struct a_list {
 	char name[50];
 	float fval;
 	int32_t ival;
@@ -53,66 +53,6 @@ struct {
 	char unit[10];
 	double conversion;
 	uint16_t address;
-} address_list[] = {
-	{
-		.name="battery_volts",
-		.address=0x0008,
-		.unit="V",
-		.conversion=0.00305175781,
-		.type = a_type_word,
-	},
-	{
-		.name="battery_array_volts",
-		.address=0x0009,
-		.unit="V",
-		.conversion=0.00305175781,
-		.type = a_type_word
-	},
-	{
-		.name="load_volts",
-		.address=0x000A,
-		.unit="V",
-		.conversion=0.00305175781,
-		.type = a_type_word
-	},
-	{
-		.name="charging_current",
-		.address=0x000B,
-		.unit="A",
-		.conversion=0.00241577148,
-		.type = a_type_word
-	},
-	{
-		.name="load_current",
-		.address=0x000C,
-		.unit="A",
-		.conversion=0.00241577148,
-		.type = a_type_word
-	}
-	,
-	{
-		.name="ambient_temp",
-		.address=0x000F,
-		.unit="°C",
-		.conversion=1,
-		.type = a_type_sword
-	}
-	,
-	{
-		.name="ah_charge",
-		.address=0x0015,
-		.unit="Ah",
-		.conversion=0.1,
-		.type = a_type_long
-	}
-	,
-	{
-		.name="ah_load",
-		.address=0x001D,
-		.unit="Ah",
-		.conversion=0.1,
-		.type = a_type_long
-	}
 };
 #define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
 
@@ -142,6 +82,68 @@ int main(int argc, char **argv) {
 	/* let's call our cmdline parser */
     if (cmdline_parser (argc, argv, &args_info) != 0) exit(1);
 	
+    struct a_list address_list[] = {
+   	{
+   		.name="battery_volts",
+   		.address=0x0008,
+   		.unit="V",
+   		.conversion=0.00305175781,
+   		.type = a_type_word
+   	},
+   	{
+   		.name="battery_array_volts",
+   		.address=0x0009,
+   		.unit="V",
+   		.conversion=0.00305175781,
+   		.type = a_type_word
+   	},
+   	{
+   		.name="load_volts",
+   		.address=0x000A,
+   		.unit="V",
+   		.conversion=0.00305175781,
+   		.type = a_type_word
+   	},
+   	{
+   		.name="charging_current",
+   		.address=0x000B,
+   		.unit="A",
+   		.conversion=0.00241577148,
+   		.type = a_type_word
+   	},
+   	{
+   		.name="load_current",
+   		.address=0x000C,
+   		.unit="A",
+   		.conversion=0.00241577148,
+   		.type = a_type_word
+   	}
+   	,
+   	{
+   		.name="ambient_temp",
+   		.address=0x000F,
+   		.unit="°C",
+   		.conversion=1,
+   		.type = a_type_sword
+   	}
+   	,
+   	{
+   		.name="ah_charge",
+   		.address=0x0015,
+   		.unit="Ah",
+   		.conversion=0.1,
+   		.type = a_type_long
+   	}
+   	,
+   	{
+   		.name="ah_load",
+   		.address=0x001D,
+   		.unit="Ah",
+   		.conversion=0.1,
+   		.type = a_type_long
+   	}
+   };
+	
 	
 	fprintf(stderr, "Connected to: %s\n",args_info.tty_arg);
 	ctx = modbus_new_rtu(args_info.tty_arg, 9600, 'N', 8, 2);
@@ -167,7 +169,7 @@ int main(int argc, char **argv) {
 	//printf("Addr list %s: %f\n",address_list[0].name,address_list[0].fval);
 	
 	for (int i=0;i<address_list_size;i++) {
-		rc = modbus_read_registers(ctx,address_list[i].address,address_list[i].type ,tab_reg);
+		rc = modbus_read_registers(ctx,address_list[i].address,address_list[i].type.size ,tab_reg);
 		if (rc == -1) {
 			fprintf(stderr, "Address: %d failed\n",address_list[i].address);
 		    fprintf(stderr, "%s\n", modbus_strerror(errno));
@@ -200,13 +202,13 @@ int main(int argc, char **argv) {
 			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].fval * address_list[i].conversion);
 		}
 		if (address_list[i].type.type==ADDR_TYPE_WORD) {
-			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival * address_list[i].conversion);
+			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].ival * address_list[i].conversion);
 		}
 		if (address_list[i].type.type==ADDR_TYPE_SWORD) {
-			printf("\t\t\"%s\":%u",address_list[i].name,address_list[i].ival * address_list[i].conversion);
+			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].ival * address_list[i].conversion);
 		}
 		if (address_list[i].type.type==ADDR_TYPE_LONG) {
-			printf("\t\t\"%s\":%d",address_list[i].name,address_list[i].ival * address_list[i].conversion);
+			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].ival * address_list[i].conversion);
 		}
 		// Last item in list
 		if (i != address_list_size - 1) {
