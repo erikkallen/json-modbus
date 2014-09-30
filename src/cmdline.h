@@ -21,12 +21,12 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_PACKAGE
 /** @brief the program name (used for printing errors) */
-#define CMDLINE_PARSER_PACKAGE "sunsaver_reader"
+#define CMDLINE_PARSER_PACKAGE "powerbox_modbus"
 #endif
 
 #ifndef CMDLINE_PARSER_PACKAGE_NAME
 /** @brief the complete program name (used for help and version) */
-#define CMDLINE_PARSER_PACKAGE_NAME "sunsaver_reader"
+#define CMDLINE_PARSER_PACKAGE_NAME "powerbox_modbus"
 #endif
 
 #ifndef CMDLINE_PARSER_VERSION
@@ -39,9 +39,9 @@ struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
-  char * tty_arg;	/**< @brief Serial port to which the sunsaver is connected. (default='/dev/ttyS1').  */
-  char * tty_orig;	/**< @brief Serial port to which the sunsaver is connected. original value given at command line.  */
-  const char *tty_help; /**< @brief Serial port to which the sunsaver is connected. help description.  */
+  char * host_arg;	/**< @brief IP adress of power gteway. (default='10.0.0.5').  */
+  char * host_orig;	/**< @brief IP adress of power gteway. original value given at command line.  */
+  const char *host_help; /**< @brief IP adress of power gteway. help description.  */
   int interval_arg;	/**< @brief Time between measurements in seconds (default='0').  */
   char * interval_orig;	/**< @brief Time between measurements in seconds original value given at command line.  */
   const char *interval_help; /**< @brief Time between measurements in seconds help description.  */
@@ -50,7 +50,7 @@ struct gengetopt_args_info
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
-  unsigned int tty_given ;	/**< @brief Whether tty was given.  */
+  unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int interval_given ;	/**< @brief Whether interval was given.  */
   unsigned int debug_given ;	/**< @brief Whether debug was given.  */
 

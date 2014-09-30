@@ -9,7 +9,7 @@
 #include <signal.h>
 
 modbus_t *ctx;
-uint16_t tab_reg[64];
+uint8_t tab_reg[8];
 int rc;
 int errno;
 float modbus_get_float_cdab(const uint16_t *src);
@@ -20,6 +20,7 @@ bool exit_now = false;
 #define ADDR_TYPE_WORD  1
 #define ADDR_TYPE_SWORD  3
 #define ADDR_TYPE_LONG  4
+#define ADDR_TYPE_COIL  5
 
 struct gengetopt_args_info args_info;
 
@@ -44,11 +45,16 @@ struct addr_type a_type_long = {
 	.type = ADDR_TYPE_LONG,
 	.size = 2
 };
+struct addr_type a_type_coil = {
+	.type = ADDR_TYPE_COIL,
+	.size = 1
+};
 
 struct a_list {
 	char name[50];
 	float fval;
 	int32_t ival;
+	uint8_t cval;
 	struct addr_type type;
 	char unit[10];
 	double conversion;
@@ -84,77 +90,65 @@ int main(int argc, char **argv) {
 	
     struct a_list address_list[] = {
    	{
-   		.name="battery_volts",
-   		.address=0x0008,
-   		.unit="V",
-   		.conversion=0.00305175781,
-   		.type = a_type_word
+   		.name="camera",
+   		.address=0,
+   		.type = a_type_coil
    	},
    	{
-   		.name="battery_array_volts",
-   		.address=0x0009,
-   		.unit="V",
-   		.conversion=0.00305175781,
-   		.type = a_type_word
+   		.name="cec-a",
+   		.address=1,
+   		.type = a_type_coil
    	},
    	{
-   		.name="load_volts",
-   		.address=0x000A,
-   		.unit="V",
-   		.conversion=0.00305175781,
-   		.type = a_type_word
+   		.name="cec-b",
+   		.address=2,
+   		.type = a_type_coil
    	},
    	{
-   		.name="charging_current",
-   		.address=0x000B,
-   		.unit="A",
-   		.conversion=0.00241577148,
-   		.type = a_type_word
+   		.name="modem-b",
+   		.address=3,
+   		.type = a_type_coil
    	},
    	{
-   		.name="load_current",
-   		.address=0x000C,
-   		.unit="A",
-   		.conversion=0.00241577148,
-   		.type = a_type_word
+   		.name="rad_sensor",
+   		.address=4,
+   		.type = a_type_coil
+   	},	
+	{
+   		.name="water_sensor",
+   		.address=5,
+   		.type = a_type_coil
    	}
    	,
    	{
-   		.name="ambient_temp",
-   		.address=0x000F,
-   		.unit="°C",
-   		.conversion=1,
-   		.type = a_type_sword
+   		.name="port_6",
+   		.address=6,
+   		.type = a_type_coil
    	}
    	,
    	{
-   		.name="ah_charge",
-   		.address=0x0015,
-   		.unit="Ah",
-   		.conversion=0.1,
-   		.type = a_type_long
-   	}
-   	,
-   	{
-   		.name="ah_load",
-   		.address=0x001D,
-   		.unit="Ah",
-   		.conversion=0.1,
-   		.type = a_type_long
+   		.name="port_7",
+   		.address=7,
+   		.type = a_type_coil
    	}
    };
 	
 	
-	fprintf(stderr, "Connected to: %s\n",args_info.tty_arg);
-	ctx = modbus_new_rtu(args_info.tty_arg, 9600, 'N', 8, 2);
+	fprintf(stderr, "Connected to: %s\n",args_info.host_arg);
+	ctx = modbus_new_tcp(args_info.host_arg, 502);
 	if (ctx == NULL) {
 	    fprintf(stderr, "Unable to create the libmodbus context\n");
 	    return -1;
 	}
-	modbus_set_slave(ctx, 1);
+	//modbus_set_slave(ctx, 0);
 	modbus_set_debug(ctx,args_info.debug_flag);
-	struct timeval rt;
-	rt.tv_sec=5;
+	
+	struct timeval rt,rt2;
+	
+	rt2.tv_sec=1;
+	rt2.tv_usec=0;
+	modbus_set_byte_timeout(ctx, &rt);
+	rt.tv_sec=10;
 	rt.tv_usec=0;
 	modbus_set_response_timeout(ctx, &rt);
 	
@@ -163,41 +157,39 @@ int main(int argc, char **argv) {
 	    modbus_free(ctx);
 	    return -1;
 	}
-	
+
 	
 	fprintf(stderr, "addr size %d\n",address_list_size);
 	//printf("Addr list %s: %f\n",address_list[0].name,address_list[0].fval);
 	
-	for (int i=0;i<address_list_size;i++) {
-		rc = modbus_read_registers(ctx,address_list[i].address,address_list[i].type.size ,tab_reg);
-		if (rc == -1) {
-			fprintf(stderr, "Address: %d failed\n",address_list[i].address);
-		    fprintf(stderr, "%s\n", modbus_strerror(errno));
-		    //return -1;
-		} else {
-			fprintf(stderr, "Address: %d success\n",address_list[i].address);
-			if (address_list[i].type.type==ADDR_TYPE_FLOAT) {
-				address_list[i].fval = (float)modbus_get_float_cdab(tab_reg);
-				fprintf(stderr, "%s: %f\n", address_list[i].name, address_list[i].fval);
-			}
-			if (address_list[i].type.type==ADDR_TYPE_WORD) {
-				address_list[i].ival = (unsigned int)tab_reg[0];
-				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
-			}
-			if (address_list[i].type.type==ADDR_TYPE_SWORD) {
-				address_list[i].ival = (int)tab_reg[0];
-				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
-			}
-			if (address_list[i].type.type==ADDR_TYPE_LONG) {
-				address_list[i].ival = (((int32_t)tab_reg[1])<<16)|tab_reg[1];
-				fprintf(stderr, "%s: %u\n", address_list[i].name, address_list[i].ival );
-			}
-		}
-		sleep(1);
+	uint8_t data[] = {0,0,0,1,1,0,1,0};
+	rc = modbus_write_bits(ctx,0,8,data);
+	if (rc == -1) {
+		fprintf(stderr, "Write: 0 failed\n");
+	    fprintf(stderr, "%s\n", modbus_strerror(errno));
+	    //return -1;
 	}
-	printf("{\n");
-	printf("\t\"water_sensor\": {\n");
+	
+	
+	rc = modbus_read_bits(ctx,0,8,tab_reg);
+	if (rc == -1) {
+		fprintf(stderr, "Read: 0 failed\n");
+	    fprintf(stderr, "%s\n", modbus_strerror(errno));
+	    //return -1;
+	}
+	
 	for (int i=0;i<address_list_size;i++) {
+		address_list[i].cval = tab_reg[i];
+		printf("Tab reg: %d %x\n",tab_reg[i],tab_reg[i]);
+	}
+	
+	
+	printf("{\n");
+	printf("\t\"power_box\": {\n");
+	for (int i=0;i<address_list_size;i++) {
+		if (address_list[i].type.type==ADDR_TYPE_COIL) {
+			printf("\t\t\"%s\":%d",address_list[i].name,address_list[i].cval);
+		}
 		if (address_list[i].type.type==ADDR_TYPE_FLOAT) {
 			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].fval * address_list[i].conversion);
 		}
@@ -219,6 +211,7 @@ int main(int argc, char **argv) {
 	}
 	printf("\t}\n");
 	printf("}\n");
+	
 	modbus_close(ctx);
 	modbus_free(ctx);
 

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.60])
-AC_INIT(sunsaver_reader, 1.0.0, corpeters@incas3.eu)
+AC_INIT(powerbox_modbus, 1.0.0, corpeters@incas3.eu)
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign])
@@ -47,7 +47,7 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memmove memset])
 
 AC_CONFIG_SRCDIR([src])
-AC_CONFIG_FILES([Makefile src/Makefile test/Makefile sunsaver_reader.ggo])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile powerbox_modbus.ggo])
 AC_CONFIG_HEADERS([src/config.h])
 
 ##########################################################################

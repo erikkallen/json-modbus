@@ -27,16 +27,16 @@
 
 const char *gengetopt_args_info_purpose = "This application reads the output from the weather station and sends it via\njson to the given ip address.";
 
-const char *gengetopt_args_info_usage = "Usage: sunsaver_reader [OPTIONS]...";
+const char *gengetopt_args_info_usage = "Usage: powerbox_modbus [OPTIONS]...";
 
 const char *gengetopt_args_info_versiontext = "";
 
 const char *gengetopt_args_info_description = "";
 
 const char *gengetopt_args_info_help[] = {
-  "  -h, --help          Print help and exit",
+  "      --help          Print help and exit",
   "  -V, --version       Print version and exit",
-  "  -t, --tty=STRING    Serial port to which the sunsaver is connected.\n                        (default=`/dev/ttyS1')",
+  "  -h, --host=STRING   IP adress of power gteway.  (default=`10.0.0.5')",
   "  -i, --interval=INT  Time between measurements in seconds  (default=`0')",
   "  -d, --debug         Show protocol debug information  (default=off)",
     0
@@ -57,6 +57,8 @@ static int
 cmdline_parser_internal (int argc, char **argv, struct gengetopt_args_info *args_info,
                         struct cmdline_parser_params *params, const char *additional_error);
 
+static int
+cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *prog_name, const char *additional_error);
 
 static char *
 gengetopt_strdup (const char *s);
@@ -66,7 +68,7 @@ void clear_given (struct gengetopt_args_info *args_info)
 {
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
-  args_info->tty_given = 0 ;
+  args_info->host_given = 0 ;
   args_info->interval_given = 0 ;
   args_info->debug_given = 0 ;
 }
@@ -75,8 +77,8 @@ static
 void clear_args (struct gengetopt_args_info *args_info)
 {
   FIX_UNUSED (args_info);
-  args_info->tty_arg = gengetopt_strdup ("/dev/ttyS1");
-  args_info->tty_orig = NULL;
+  args_info->host_arg = gengetopt_strdup ("10.0.0.5");
+  args_info->host_orig = NULL;
   args_info->interval_arg = 0;
   args_info->interval_orig = NULL;
   args_info->debug_flag = 0;
@@ -90,7 +92,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
 
   args_info->help_help = gengetopt_args_info_help[0] ;
   args_info->version_help = gengetopt_args_info_help[1] ;
-  args_info->tty_help = gengetopt_args_info_help[2] ;
+  args_info->host_help = gengetopt_args_info_help[2] ;
   args_info->interval_help = gengetopt_args_info_help[3] ;
   args_info->debug_help = gengetopt_args_info_help[4] ;
   
@@ -176,8 +178,8 @@ static void
 cmdline_parser_release (struct gengetopt_args_info *args_info)
 {
 
-  free_string_field (&(args_info->tty_arg));
-  free_string_field (&(args_info->tty_orig));
+  free_string_field (&(args_info->host_arg));
+  free_string_field (&(args_info->host_orig));
   free_string_field (&(args_info->interval_orig));
   
   
@@ -213,8 +215,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "help", 0, 0 );
   if (args_info->version_given)
     write_into_file(outfile, "version", 0, 0 );
-  if (args_info->tty_given)
-    write_into_file(outfile, "tty", args_info->tty_orig, 0);
+  if (args_info->host_given)
+    write_into_file(outfile, "host", args_info->host_orig, 0);
   if (args_info->interval_given)
     write_into_file(outfile, "interval", args_info->interval_orig, 0);
   if (args_info->debug_given)
@@ -314,9 +316,37 @@ cmdline_parser2 (int argc, char **argv, struct gengetopt_args_info *args_info, i
 int
 cmdline_parser_required (struct gengetopt_args_info *args_info, const char *prog_name)
 {
-  FIX_UNUSED (args_info);
-  FIX_UNUSED (prog_name);
-  return EXIT_SUCCESS;
+  int result = EXIT_SUCCESS;
+
+  if (cmdline_parser_required2(args_info, prog_name, 0) > 0)
+    result = EXIT_FAILURE;
+
+  if (result == EXIT_FAILURE)
+    {
+      cmdline_parser_free (args_info);
+      exit (EXIT_FAILURE);
+    }
+  
+  return result;
+}
+
+int
+cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *prog_name, const char *additional_error)
+{
+  int error_occurred = 0;
+  FIX_UNUSED (additional_error);
+
+  /* checks for required options */
+  if (! args_info->host_given)
+    {
+      fprintf (stderr, "%s: '--host' ('-h') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error_occurred = 1;
+    }
+  
+  
+  /* checks for dependences among options */
+
+  return error_occurred;
 }
 
 
@@ -473,38 +503,33 @@ cmdline_parser_internal (
       int option_index = 0;
 
       static struct option long_options[] = {
-        { "help",	0, NULL, 'h' },
+        { "help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
-        { "tty",	1, NULL, 't' },
+        { "host",	1, NULL, 'h' },
         { "interval",	1, NULL, 'i' },
         { "debug",	0, NULL, 'd' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVt:i:d", long_options, &option_index);
+      c = getopt_long (argc, argv, "Vh:i:d", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
       switch (c)
         {
-        case 'h':	/* Print help and exit.  */
-          cmdline_parser_print_help ();
-          cmdline_parser_free (&local_args_info);
-          exit (EXIT_SUCCESS);
-
         case 'V':	/* Print version and exit.  */
           cmdline_parser_print_version ();
           cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
-        case 't':	/* Serial port to which the sunsaver is connected..  */
+        case 'h':	/* IP adress of power gteway..  */
         
         
-          if (update_arg( (void *)&(args_info->tty_arg), 
-               &(args_info->tty_orig), &(args_info->tty_given),
-              &(local_args_info.tty_given), optarg, 0, "/dev/ttyS1", ARG_STRING,
+          if (update_arg( (void *)&(args_info->host_arg), 
+               &(args_info->host_orig), &(args_info->host_given),
+              &(local_args_info.host_given), optarg, 0, "10.0.0.5", ARG_STRING,
               check_ambiguity, override, 0, 0,
-              "tty", 't',
+              "host", 'h',
               additional_error))
             goto failure;
         
@@ -533,6 +558,12 @@ cmdline_parser_internal (
           break;
 
         case 0:	/* Long option with no short option */
+          if (strcmp (long_options[option_index].name, "help") == 0) {
+            cmdline_parser_print_help ();
+            cmdline_parser_free (&local_args_info);
+            exit (EXIT_SUCCESS);
+          }
+
         case '?':	/* Invalid option.  */
           /* `getopt_long' already printed an error message.  */
           goto failure;
@@ -545,6 +576,10 @@ cmdline_parser_internal (
 
 
 
+  if (check_required)
+    {
+      error_occurred += cmdline_parser_required2 (args_info, argv[0], additional_error);
+    }
 
   cmdline_parser_release (&local_args_info);
 
