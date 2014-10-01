@@ -81,8 +81,8 @@ struct mb_util_ctx {
 static void catch_function(int signo) {
 	if (exit_now) {
 		fprintf(stderr,"Exiting now!\n");
-		modbus_close(ctx);
-		modbus_free(ctx);
+		//modbus_close(ctx);
+		//modbus_free(ctx);
 		exit(-1);
 	} else {
 	    if (signo == SIGINT) {
@@ -121,26 +121,26 @@ void process_registers(struct mb_util_ctx * ctx) {
         printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
         if (ctx->reg_list[i].rw == 'r') {
             printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
-            if (strncmp(type,"uint16",10)) {
-                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+            if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10)) {
+                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
             }
     
-            if (strncmp(type,"int16",10)) {
-                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].int16_val);
+            if (strncmp(ctx->reg_list[i].type,"int16",10)) {
+                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
             }
     
-            if (strncmp(type,"int8",10)) {
-                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].int8_val);
+            if (strncmp(ctx->reg_list[i].type,"int8",10)) {
+                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
             }
     
-            if (strncmp(type,"float",10)) {
+            if (strncmp(ctx->reg_list[i].type,"float",10)) {
                 uint16_t tmp[2];
-                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 2, tmp);
-                &ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
+                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
+                ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
             }
     
-            if (strncmp(type,"coil",10)) {
-                rc = modbus_read_bits(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].int8_val);
+            if (strncmp(ctx->reg_list[i].type,"coil",10)) {
+                rc = modbus_read_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
             }
         }
     }
