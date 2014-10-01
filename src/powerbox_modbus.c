@@ -166,31 +166,31 @@ int main(int argc, char **argv) {
     
 
 
-	/*
+	
 	
 	fprintf(stderr, "Connected to: %s\n",args_info.host_arg);
-	ctx = modbus_new_tcp(args_info.host_arg, 502);
-	if (ctx == NULL) {
+	mb_instance.modbus_ctx = modbus_new_tcp(args_info.host_arg, 502);
+	if (mb_instance.modbus_ctx == NULL) {
 	    fprintf(stderr, "Unable to create the libmodbus context\n");
 	    return -1;
 	}
 	//modbus_set_slave(ctx, 0);
-	modbus_set_debug(ctx,args_info.debug_flag);
+	modbus_set_debug(mb_instance.modbus_ctx,args_info.debug_flag);
 	
 	struct timeval rt,rt2;
 	
 	rt2.tv_sec=1;
 	rt2.tv_usec=0;
-	modbus_set_byte_timeout(ctx, &rt);
+	modbus_set_byte_timeout(mb_instance.modbus_ctx, &rt);
 	rt.tv_sec=10;
 	rt.tv_usec=0;
-	modbus_set_response_timeout(ctx, &rt);
+	modbus_set_response_timeout(mb_instance.modbus_ctx, &rt);
 	
-	if (modbus_connect(ctx) == -1) {
+	if (modbus_connect(mb_instance.modbus_ctx) == -1) {
 	    fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
-	    modbus_free(ctx);
+	    modbus_free(mb_instance.modbus_ctx);
 	    return -1;
-	}*/
+	}
     
     process_registers(&mb_instance);
 
@@ -248,10 +248,10 @@ int main(int argc, char **argv) {
 	printf("\t}\n");
 	printf("}\n");
 	*/
-	/*modbus_close(ctx);
-	modbus_free(ctx);
+	modbus_close(mb_instance.modbus_ctx);
+	modbus_free(mb_instance.modbus_ctx);
     free(mb_instance.reg_list);
-*/
+    
 	return 0;
 }
 
