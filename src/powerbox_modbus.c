@@ -8,7 +8,6 @@
 #include "cmdline.h"
 #include <signal.h>
 
-modbus_t *ctx;
 uint8_t tab_reg[8];
 int rc;
 int errno;
@@ -21,6 +20,7 @@ bool exit_now = false;
 #define ADDR_TYPE_SWORD  3
 #define ADDR_TYPE_LONG  4
 #define ADDR_TYPE_COIL  5
+#define ADDR_TYPE_CHAR  5
 
 struct gengetopt_args_info args_info;
 
@@ -45,22 +45,37 @@ struct addr_type a_type_long = {
 	.type = ADDR_TYPE_LONG,
 	.size = 2
 };
+struct addr_type a_type_char = {
+	.type = ADDR_TYPE_CHAR,
+	.size = 1
+};
 struct addr_type a_type_coil = {
 	.type = ADDR_TYPE_COIL,
 	.size = 1
 };
 
-struct a_list {
+typedef struct reg_list {
 	char name[50];
-	float fval;
-	int32_t ival;
-	uint8_t cval;
-	struct addr_type type;
+	float float_val;
+	int32_t int32_val;
+	uint8_t uint8_val;
+    int8_t int8_val;
+    uint16_t uint16_val;
+    int16_t int16_val;
+	char type[11];
 	char unit[10];
 	double conversion;
 	uint16_t address;
+    char rw;
+} reg_list_t;
+
+struct mb_util_ctx {
+    reg_list_t * reg_list;
+    uint16_t reg_index;
+    modbus_t *modbus_ctx;
 };
-#define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
+
+//#define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
 
 
 static void catch_function(int signo) {
@@ -79,6 +94,57 @@ static void catch_function(int signo) {
     
 }
 
+void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
+    char type[11];
+    char name[51];
+    uint16_t reg;
+    char value[51];
+    float conversion;
+    char rw;
+    // --reg "type name reg r/w conversion value"
+    sscanf(def_str, "%10s%50s%hu %1c%f%10s",type,name,&reg,&rw,&conversion,value);
+    
+    ctx->reg_list[ctx->reg_index].address = reg;
+    strncpy(ctx->reg_list[ctx->reg_index].name,name,50);
+    ctx->reg_list[ctx->reg_index].conversion = conversion;
+    ctx->reg_list[ctx->reg_index].rw = rw;
+    strncpy(ctx->reg_list[ctx->reg_index].type,type,11);
+    
+    ctx->reg_index++;
+    printf("Type: %s\nName: %s\nReg: %u\nValue: %s\nConversion: %f\nR/W: %c\n",type,name,reg,value,conversion,rw);
+    
+}
+
+void process_registers(struct mb_util_ctx * ctx) {
+    printf("Process registers: %d\n",ctx->reg_index);
+    for (int i=0;i<ctx->reg_index;i++) {
+        printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
+        if (ctx->reg_list[i].rw == 'r') {
+            printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
+            if (strncmp(type,"uint16",10)) {
+                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+            }
+    
+            if (strncmp(type,"int16",10)) {
+                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].int16_val);
+            }
+    
+            if (strncmp(type,"int8",10)) {
+                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].int8_val);
+            }
+    
+            if (strncmp(type,"float",10)) {
+                uint16_t tmp[2];
+                rc = modbus_read_input_registers(ctx.modbus_ctx, ctx->reg_list[i].address, 2, tmp);
+                &ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
+            }
+    
+            if (strncmp(type,"coil",10)) {
+                rc = modbus_read_bits(ctx.modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].int8_val);
+            }
+        }
+    }
+}
 
 int main(int argc, char **argv) {
     if (signal(SIGINT, catch_function) == SIG_ERR) {
@@ -87,52 +153,20 @@ int main(int argc, char **argv) {
     }
 	/* let's call our cmdline parser */
     if (cmdline_parser (argc, argv, &args_info) != 0) exit(1);
-	
-    struct a_list address_list[] = {
-   	{
-   		.name="camera",
-   		.address=0,
-   		.type = a_type_coil
-   	},
-   	{
-   		.name="cec-a",
-   		.address=1,
-   		.type = a_type_coil
-   	},
-   	{
-   		.name="cec-b",
-   		.address=2,
-   		.type = a_type_coil
-   	},
-   	{
-   		.name="modem-b",
-   		.address=3,
-   		.type = a_type_coil
-   	},
-   	{
-   		.name="rad_sensor",
-   		.address=4,
-   		.type = a_type_coil
-   	},	
-	{
-   		.name="water_sensor",
-   		.address=5,
-   		.type = a_type_coil
-   	}
-   	,
-   	{
-   		.name="port_6",
-   		.address=6,
-   		.type = a_type_coil
-   	}
-   	,
-   	{
-   		.name="port_7",
-   		.address=7,
-   		.type = a_type_coil
-   	}
-   };
-	
+    
+    struct mb_util_ctx mb_instance;
+    mb_instance.reg_list = (reg_list_t *) malloc(sizeof(reg_list_t) * args_info.reg_given);
+    mb_instance.reg_index = 0;
+    
+    
+    for (int i = 0; i < args_info.reg_given; ++i) {
+        parse_def_string(args_info.reg_arg[i],&mb_instance);
+        printf ("passed coil: %s\n", args_info.reg_arg[i]);
+    }
+    
+
+
+	/*
 	
 	fprintf(stderr, "Connected to: %s\n",args_info.host_arg);
 	ctx = modbus_new_tcp(args_info.host_arg, 502);
@@ -156,13 +190,14 @@ int main(int argc, char **argv) {
 	    fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
 	    modbus_free(ctx);
 	    return -1;
-	}
+	}*/
+    
+    process_registers(&mb_instance);
 
-	
-	fprintf(stderr, "addr size %d\n",address_list_size);
+	//fprintf(stderr, "addr size %d\n",address_list_size);
 	//printf("Addr list %s: %f\n",address_list[0].name,address_list[0].fval);
 	
-	uint8_t data[] = {0,0,0,1,1,0,1,0};
+	/*uint8_t data[] = {0,0,0,1,1,0,1,0};
 	rc = modbus_write_bits(ctx,0,8,data);
 	if (rc == -1) {
 		fprintf(stderr, "Write: 0 failed\n");
@@ -176,7 +211,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Read: 0 failed\n");
 	    fprintf(stderr, "%s\n", modbus_strerror(errno));
 	    //return -1;
-	}
+	}*/
+    /*
 	
 	for (int i=0;i<address_list_size;i++) {
 		address_list[i].cval = tab_reg[i];
@@ -211,10 +247,11 @@ int main(int argc, char **argv) {
 	}
 	printf("\t}\n");
 	printf("}\n");
-	
-	modbus_close(ctx);
+	*/
+	/*modbus_close(ctx);
 	modbus_free(ctx);
-
+    free(mb_instance.reg_list);
+*/
 	return 0;
 }
 

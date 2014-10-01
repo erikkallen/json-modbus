@@ -47,12 +47,25 @@ struct gengetopt_args_info
   const char *interval_help; /**< @brief Time between measurements in seconds help description.  */
   int debug_flag;	/**< @brief Show protocol debug information (default=off).  */
   const char *debug_help; /**< @brief Show protocol debug information help description.  */
+  char * name_arg;	/**< @brief Name of the application.  */
+  char * name_orig;	/**< @brief Name of the application original value given at command line.  */
+  const char *name_help; /**< @brief Name of the application help description.  */
+  int include_date_flag;	/**< @brief add a date to the output (default=off).  */
+  const char *include_date_help; /**< @brief add a date to the output help description.  */
+  char ** reg_arg;	/**< @brief Define a register to read or write.  */
+  char ** reg_orig;	/**< @brief Define a register to read or write original value given at command line.  */
+  unsigned int reg_min; /**< @brief Define a register to read or write's minimum occurreces */
+  unsigned int reg_max; /**< @brief Define a register to read or write's maximum occurreces */
+  const char *reg_help; /**< @brief Define a register to read or write help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int interval_given ;	/**< @brief Whether interval was given.  */
   unsigned int debug_given ;	/**< @brief Whether debug was given.  */
+  unsigned int name_given ;	/**< @brief Whether name was given.  */
+  unsigned int include_date_given ;	/**< @brief Whether include-date was given.  */
+  unsigned int reg_given ;	/**< @brief Whether reg was given.  */
 
 } ;
 
