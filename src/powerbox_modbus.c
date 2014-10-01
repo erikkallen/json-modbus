@@ -146,6 +146,35 @@ void process_registers(struct mb_util_ctx * ctx) {
     }
 }
 
+void print_registers(struct mb_util_ctx * ctx) {
+    printf("Process registers: %d\n",ctx->reg_index);
+    for (int i=0;i<ctx->reg_index;i++) {
+        printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
+        if (ctx->reg_list[i].rw == 'r') {
+            printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
+            if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10)) {
+                printf("uint16: %hu\n", ctx->reg_list[i].uint16_val);
+            }
+    
+            if (strncmp(ctx->reg_list[i].type,"int16",10)) {
+                printf("uint16: %hd\n", ctx->reg_list[i].int16_val);
+            }
+    
+            if (strncmp(ctx->reg_list[i].type,"int8",10)) {
+                printf("uint16: %d\n", ctx->reg_list[i].int8_val);
+            }
+    
+            if (strncmp(ctx->reg_list[i].type,"float",10)) {
+                printf("uint16: %f\n", ctx->reg_list[i].float_val);
+            }
+    
+            if (strncmp(ctx->reg_list[i].type,"coil",10)) {
+                printf("uint16: %hhu\n", ctx->reg_list[i].uint8_val);
+            }
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     if (signal(SIGINT, catch_function) == SIG_ERR) {
         fprintf(stderr,"An error occurred while setting a signal handler.\n");
@@ -193,6 +222,8 @@ int main(int argc, char **argv) {
 	}
     
     process_registers(&mb_instance);
+    
+    print_registers(&mb_instance);
 
 	//fprintf(stderr, "addr size %d\n",address_list_size);
 	//printf("Addr list %s: %f\n",address_list[0].name,address_list[0].fval);
