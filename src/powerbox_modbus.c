@@ -8,12 +8,15 @@
 #include "cmdline.h"
 #include <signal.h>
 
+#define DEBUG_MSG(msg,...) if (debug_mode) fprintf(stderr, msg, ##__VA_ARGS__);
+
 uint8_t tab_reg[8];
 int rc;
 int errno;
 float modbus_get_float_cdab(const uint16_t *src);
 bool running = true;
 bool exit_now = false;
+bool debug_mode = false;
 
 #define MB_TYPE_FLOAT  2 
 #define MB_TYPE_WORD  1
@@ -61,13 +64,13 @@ struct mb_util_ctx {
 
 static void catch_function(int signo) {
 	if (exit_now) {
-		fprintf(stderr,"Exiting now!\n");
+		DEBUG_MSG("Exiting now!\n");
 		//modbus_close(ctx);
 		//modbus_free(ctx);
 		exit(-1);
 	} else {
 	    if (signo == SIGINT) {
-			fprintf(stderr,"Exiting nicely\n");
+			DEBUG_MSG("Exiting nicely\n");
 	    	running = false;
 			exit_now = true;
 	    }
@@ -119,19 +122,19 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
 	
     
     ctx->reg_index++;
-    printf("Type: %s\nName: %s\nReg: %u\nValue: %s\nConversion: %f\nR/W: %c\n",type,name,reg,value,conversion,rw);
+    DEBUG_MSG("Type: %s\nName: %s\nReg: %u\nValue: %s\nConversion: %f\nR/W: %c\n",type,name,reg,value,conversion,rw);
     
 }
 
 void process_registers(struct mb_util_ctx * ctx) {
     uint16_t tmp[2];
-    printf("Process registers: %d\n",ctx->reg_index);
-	printf("Reg list rw: %c\n",ctx->rw);
+    DEBUG_MSG("Process registers: %d\n",ctx->reg_index);
+	DEBUG_MSG("Reg list rw: %c\n",ctx->rw);
     
 	// Read registers
 	if (ctx->rw == 'r') {
     	for (int i=0;i<ctx->reg_index;i++) {
-	        printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
+	        DEBUG_MSG("Reading: reg: %hu\n",ctx->reg_list[i].address);
             switch(ctx->reg_list[i].type) {
                 case mb_uint16:
                     rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
@@ -158,7 +161,7 @@ void process_registers(struct mb_util_ctx * ctx) {
         }
     } else { // Write registers
     	for (int i=0;i<ctx->reg_index;i++) {
-	        printf("Writing: reg: %hu\n",ctx->reg_list[i].address);
+	        DEBUG_MSG("Writing: reg: %hu\n",ctx->reg_list[i].address);
             switch(ctx->reg_list[i].type) {
                 case mb_uint16:
                     rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
@@ -173,7 +176,7 @@ void process_registers(struct mb_util_ctx * ctx) {
                     rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
                 break;
                 case mb_float:
-                fprintf(stderr,"writing float not implemented");
+                DEBUG_MSG("writing float not implemented");
                 exit(1);
                 break;
                 case mb_coil:
@@ -229,7 +232,7 @@ void print_registers(struct mb_util_ctx * ctx) {
 
 int main(int argc, char **argv) {
     if (signal(SIGINT, catch_function) == SIG_ERR) {
-        fprintf(stderr,"An error occurred while setting a signal handler.\n");
+        DEBUG_MSG("An error occurred while setting a signal handler.\n");
         return EXIT_FAILURE;
     }
 	/* let's call our cmdline parser */
@@ -239,10 +242,10 @@ int main(int argc, char **argv) {
     mb_instance.reg_list = (reg_list_t *) malloc(sizeof(reg_list_t) * args_info.reg_given);
     mb_instance.reg_index = 0;
 	if (args_info.write_flag == true) {
-		printf ("Write registers\n");
+		DEBUG_MSG("Write registers\n");
 		mb_instance.rw = 'w';
 	} else {
-		printf ("Read registers\n");
+		DEBUG_MSG("Read registers\n");
 		mb_instance.rw = 'r';
 	}
 	// Copy system name
@@ -251,17 +254,18 @@ int main(int argc, char **argv) {
     
     for (int i = 0; i < args_info.reg_given; ++i) {
         parse_def_string(args_info.reg_arg[i],&mb_instance);
-        printf ("passed coil: %s\n", args_info.reg_arg[i]);
+        DEBUG_MSG("passed coil: %s\n", args_info.reg_arg[i]);
     }
 	
-	fprintf(stderr, "Connected to: %s\n",args_info.host_arg);
+	DEBUG_MSG("Connected to: %s\n",args_info.host_arg);
 	mb_instance.modbus_ctx = modbus_new_tcp(args_info.host_arg, 502);
 	if (mb_instance.modbus_ctx == NULL) {
-	    fprintf(stderr, "Unable to create the libmodbus context\n");
+	    DEBUG_MSG("Unable to create the libmodbus context\n");
 	    return -1;
 	}
 	//modbus_set_slave(ctx, 0);
 	modbus_set_debug(mb_instance.modbus_ctx,args_info.debug_flag);
+    debug_mode = args_info.debug_flag;
 	
 	struct timeval rt,rt2;
 	
@@ -273,7 +277,7 @@ int main(int argc, char **argv) {
 	modbus_set_response_timeout(mb_instance.modbus_ctx, &rt);
 	*/
 	if (modbus_connect(mb_instance.modbus_ctx) == -1) {
-	    fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
+	    DEBUG_MSG("Connection failed: %s\n", modbus_strerror(errno));
 	    modbus_free(mb_instance.modbus_ctx);
 	    return -1;
 	}
