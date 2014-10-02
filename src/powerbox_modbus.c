@@ -73,6 +73,7 @@ struct mb_util_ctx {
     reg_list_t * reg_list;
     uint16_t reg_index;
     modbus_t *modbus_ctx;
+	char name[51];
 };
 
 //#define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
@@ -141,38 +142,54 @@ void process_registers(struct mb_util_ctx * ctx) {
     
             if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
                 rc = modbus_read_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
+				printf("Read coil: %hu\nValue: %hhu\n",ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
             }
         }
     }
 }
 
 void print_registers(struct mb_util_ctx * ctx) {
-    printf("Process registers: %d\n",ctx->reg_index);
+    //printf("Process registers: %d\n",ctx->reg_index);
+	printf("{\n");
+	printf("\t\"%s\": {\n", ctx->name);
     for (int i=0;i<ctx->reg_index;i++) {
-        printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
+        //printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
         if (ctx->reg_list[i].rw == 'r') {
-            printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
+            //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
             if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
-                printf("uint16: %hu\n", ctx->reg_list[i].uint16_val);
+                //printf("uint16: %hu\n", ctx->reg_list[i].uint16_val);
+				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val * ctx->reg_list[i].conversion);
             }
     
             if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
-                printf("uint16: %hd\n", ctx->reg_list[i].int16_val);
+                //printf("int16: %hd\n", ctx->reg_list[i].int16_val);
+				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int16_val * ctx->reg_list[i].conversion);
             }
     
             if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
-                printf("uint16: %d\n", ctx->reg_list[i].int8_val);
+                //printf("int8: %d\n", ctx->reg_list[i].int8_val);
+				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int8_val * ctx->reg_list[i].conversion);
             }
     
             if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
-                printf("uint16: %f\n", ctx->reg_list[i].float_val);
+                //printf("float: %f\n", ctx->reg_list[i].float_val);
+				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val * ctx->reg_list[i].conversion);
             }
     
             if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
-                printf("uint16: %hhu\n", ctx->reg_list[i].uint8_val);
+                //printf("coil: %hhu\n", ctx->reg_list[i].uint8_val);
+				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val * ctx->reg_list[i].conversion);
             }
+			// Last item in list
+			if (i != ctx->reg_index - 1) {
+				printf(",\n");
+			} else {
+				printf("\n");
+			}
         }
     }
+	printf("\t}\n");
+	printf("}\n");
 }
 
 int main(int argc, char **argv) {
@@ -186,6 +203,8 @@ int main(int argc, char **argv) {
     struct mb_util_ctx mb_instance;
     mb_instance.reg_list = (reg_list_t *) malloc(sizeof(reg_list_t) * args_info.reg_given);
     mb_instance.reg_index = 0;
+	// Copy system name
+	strncpy(mb_instance.name,args_info.name_arg,49);
     
     
     for (int i = 0; i < args_info.reg_given; ++i) {
@@ -208,13 +227,13 @@ int main(int argc, char **argv) {
 	
 	struct timeval rt,rt2;
 	
-	rt2.tv_sec=1;
+	/*rt2.tv_sec=1;
 	rt2.tv_usec=0;
 	modbus_set_byte_timeout(mb_instance.modbus_ctx, &rt);
 	rt.tv_sec=10;
 	rt.tv_usec=0;
 	modbus_set_response_timeout(mb_instance.modbus_ctx, &rt);
-	
+	*/
 	if (modbus_connect(mb_instance.modbus_ctx) == -1) {
 	    fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
 	    modbus_free(mb_instance.modbus_ctx);
@@ -237,16 +256,16 @@ int main(int argc, char **argv) {
 	}
 	
 	
-	rc = modbus_read_bits(ctx,0,8,tab_reg);
+	rc = modbus_read_bits(mb_instance.modbus_ctx,0,8,tab_reg);
 	if (rc == -1) {
 		fprintf(stderr, "Read: 0 failed\n");
 	    fprintf(stderr, "%s\n", modbus_strerror(errno));
 	    //return -1;
-	}*/
-    /*
+	}
+    
 	
-	for (int i=0;i<address_list_size;i++) {
-		address_list[i].cval = tab_reg[i];
+	for (int i=0;i<8;i++) {
+		//address_list[i].cval = tab_reg[i];
 		printf("Tab reg: %d %x\n",tab_reg[i],tab_reg[i]);
 	}
 	

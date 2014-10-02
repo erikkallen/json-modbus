@@ -1,0 +1,1 @@
+src/powerbox_modbus  --include-date --name "sys1" --reg "coil camera 0 r 1" --reg "coil cec-a 1 r 1" --reg "coil cec-b 2 r 1" --reg "coil modem-b 3 r 1" --reg "coil rad_sensor 4 r 1" --reg "coil water_sensor 5 r 1" --reg "coil port_6 6 r 1" --reg "coil port_7 7 r 1" --reg "coil port_8 8 r 1" -h 10.0.0.5
