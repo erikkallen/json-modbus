@@ -22,7 +22,14 @@ bool exit_now = false;
 #define MB_TYPE_COIL  5
 #define MB_TYPE_CHAR  5
 
-
+enum mb_data_type {
+  mb_float,
+  mb_uint8,
+  mb_uint16,
+  mb_int8,
+  mb_int16,
+  mb_coil  
+};
 
 struct gengetopt_args_info args_info;
 
@@ -34,7 +41,7 @@ typedef struct reg_list {
     int8_t int8_val;
     uint16_t uint16_val;
     int16_t int16_val;
-	char type[11];
+	enum mb_data_type type;
 	char unit[10];
 	double conversion;
 	uint16_t address;
@@ -82,28 +89,30 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
     strncpy(ctx->reg_list[ctx->reg_index].name,name,50);
     ctx->reg_list[ctx->reg_index].conversion = conversion;
     ctx->reg_list[ctx->reg_index].rw = rw;
-    strncpy(ctx->reg_list[ctx->reg_index].type,type,11);
-	
-	
 	
     if (strncmp(type,"uint16",10) == 0) {
+        ctx->reg_list[ctx->reg_index].type = mb_uint16;
 		ctx->reg_list[ctx->reg_index].uint16_val = (uint16_t)atoi(value);
     }
 
     if (strncmp(type,"int16",10) == 0) {
+        ctx->reg_list[ctx->reg_index].type = mb_int16;
 		ctx->reg_list[ctx->reg_index].int16_val = (int16_t)atoi(value);
     }
 
-    if (strncmp(ctx->reg_list[ctx->reg_index].type,"int8",10) == 0) {
+    if (strncmp(type,"int8",10) == 0) {
+        ctx->reg_list[ctx->reg_index].type = mb_int8;
 		ctx->reg_list[ctx->reg_index].int8_val = (int8_t)atoi(value);
     }
 
-    if (strncmp(ctx->reg_list[ctx->reg_index].type,"float",10) == 0) {
-        fprintf(stderr,"writing float not implemented");
-        exit(1);
+    if (strncmp(type,"float",10) == 0) {
+        ctx->reg_list[ctx->reg_index].type = mb_float;
+        //fprintf(stderr,"writing float not implemented");
+        //exit(1);
     }
 
-    if (strncmp(ctx->reg_list[ctx->reg_index].type,"coil",10) == 0) {
+    if (strncmp(type,"coil",10) == 0) {
+        ctx->reg_list[ctx->reg_index].type = mb_coil;
 		ctx->reg_list[ctx->reg_index].uint8_val = (uint8_t)atoi(value);
     }
 	
@@ -115,62 +124,64 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
 }
 
 void process_registers(struct mb_util_ctx * ctx) {
+    uint16_t tmp[2];
     printf("Process registers: %d\n",ctx->reg_index);
 	printf("Reg list rw: %c\n",ctx->rw);
+    
 	// Read registers
 	if (ctx->rw == 'r') {
     	for (int i=0;i<ctx->reg_index;i++) {
 	        printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
-	        if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
-	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
-	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
-	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
-	            uint16_t tmp[2];
-	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
-	            ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
-	            rc = modbus_read_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
-				printf("Read coil: %hu\nValue: %hhu\n",ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
-	        }
+            switch(ctx->reg_list[i].type) {
+                case mb_uint16:
+                    rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+                break;
+                case mb_int16:
+                    rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
+                break;
+                case mb_int8:
+                    rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                break;
+                case mb_uint8:
+                    rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                break;
+                case mb_float:
+    	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
+    	            ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
+                break;
+                case mb_coil:
+                    rc = modbus_read_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
+                break;
+                default:
+                break;
+            }
         }
     } else { // Write registers
     	for (int i=0;i<ctx->reg_index;i++) {
 	        printf("Writing: reg: %hu\n",ctx->reg_list[i].address);
-	        if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
-	            rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
-	            rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
-	            rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
+            switch(ctx->reg_list[i].type) {
+                case mb_uint16:
+                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+                break;
+                case mb_int16:
+                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
+                break;
+                case mb_int8:
+                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                break;
+                case mb_uint8:
+                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                break;
+                case mb_float:
                 fprintf(stderr,"writing float not implemented");
                 exit(1);
-	            //uint16_t tmp[2];
-	            //rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
-	            //ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
-	        }
-
-	        if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
-	            rc = modbus_write_bit(ctx->modbus_ctx, ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
-				printf("Write coil: %hu\nValue: %hhu\n",ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
-	        }
+                break;
+                case mb_coil:
+                    rc = modbus_write_bit(ctx->modbus_ctx, ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
+                break;
+                default:
+                break;
+            }
         }
     }
 }
@@ -182,30 +193,29 @@ void print_registers(struct mb_util_ctx * ctx) {
     for (int i=0;i<ctx->reg_index;i++) {
         //printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
         //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
-        if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
-            //printf("uint16: %hu\n", ctx->reg_list[i].uint16_val);
-			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val * ctx->reg_list[i].conversion);
+        switch(ctx->reg_list[i].type) {
+            case mb_uint16:
+                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val * ctx->reg_list[i].conversion);
+            break;
+            case mb_int16:
+                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int16_val * ctx->reg_list[i].conversion);
+            break;
+            case mb_int8:
+                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int8_val * ctx->reg_list[i].conversion);
+            break;
+            case mb_uint8:
+                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val * ctx->reg_list[i].conversion);
+            break;
+            case mb_float:
+                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val * ctx->reg_list[i].conversion);
+            break;
+            case mb_coil:
+                printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val);
+            break;
+            default:
+            break;
         }
-
-        if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
-            //printf("int16: %hd\n", ctx->reg_list[i].int16_val);
-			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int16_val * ctx->reg_list[i].conversion);
-        }
-
-        if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
-            //printf("int8: %d\n", ctx->reg_list[i].int8_val);
-			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int8_val * ctx->reg_list[i].conversion);
-        }
-
-        if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
-            //printf("float: %f\n", ctx->reg_list[i].float_val);
-			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val * ctx->reg_list[i].conversion);
-        }
-
-        if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
-            //printf("coil: %hhu\n", ctx->reg_list[i].uint8_val);
-			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val * ctx->reg_list[i].conversion);
-        }
+        
 		// Last item in list
 		if (i != ctx->reg_index - 1) {
 			printf(",\n");
@@ -243,10 +253,6 @@ int main(int argc, char **argv) {
         parse_def_string(args_info.reg_arg[i],&mb_instance);
         printf ("passed coil: %s\n", args_info.reg_arg[i]);
     }
-    
-
-
-	
 	
 	fprintf(stderr, "Connected to: %s\n",args_info.host_arg);
 	mb_instance.modbus_ctx = modbus_new_tcp(args_info.host_arg, 502);
@@ -276,60 +282,6 @@ int main(int argc, char **argv) {
     
     print_registers(&mb_instance);
 
-	//fprintf(stderr, "addr size %d\n",address_list_size);
-	//printf("Addr list %s: %f\n",address_list[0].name,address_list[0].fval);
-	
-	/*uint8_t data[] = {0,0,0,1,1,0,1,0};
-	rc = modbus_write_bits(ctx,0,8,data);
-	if (rc == -1) {
-		fprintf(stderr, "Write: 0 failed\n");
-	    fprintf(stderr, "%s\n", modbus_strerror(errno));
-	    //return -1;
-	}
-	
-	
-	rc = modbus_read_bits(mb_instance.modbus_ctx,0,8,tab_reg);
-	if (rc == -1) {
-		fprintf(stderr, "Read: 0 failed\n");
-	    fprintf(stderr, "%s\n", modbus_strerror(errno));
-	    //return -1;
-	}
-    
-	
-	for (int i=0;i<8;i++) {
-		//address_list[i].cval = tab_reg[i];
-		printf("Tab reg: %d %x\n",tab_reg[i],tab_reg[i]);
-	}
-	
-	
-	printf("{\n");
-	printf("\t\"power_box\": {\n");
-	for (int i=0;i<address_list_size;i++) {
-		if (address_list[i].type.type==ADDR_TYPE_COIL) {
-			printf("\t\t\"%s\":%d",address_list[i].name,address_list[i].cval);
-		}
-		if (address_list[i].type.type==ADDR_TYPE_FLOAT) {
-			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].fval * address_list[i].conversion);
-		}
-		if (address_list[i].type.type==ADDR_TYPE_WORD) {
-			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].ival * address_list[i].conversion);
-		}
-		if (address_list[i].type.type==ADDR_TYPE_SWORD) {
-			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].ival * address_list[i].conversion);
-		}
-		if (address_list[i].type.type==ADDR_TYPE_LONG) {
-			printf("\t\t\"%s\":%f",address_list[i].name,address_list[i].ival * address_list[i].conversion);
-		}
-		// Last item in list
-		if (i != address_list_size - 1) {
-			printf(",\n");
-		} else {
-			printf("\n");
-		}
-	}
-	printf("\t}\n");
-	printf("}\n");
-	*/
 	modbus_close(mb_instance.modbus_ctx);
 	modbus_free(mb_instance.modbus_ctx);
     free(mb_instance.reg_list);
