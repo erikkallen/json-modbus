@@ -15,44 +15,16 @@ float modbus_get_float_cdab(const uint16_t *src);
 bool running = true;
 bool exit_now = false;
 
-#define ADDR_TYPE_FLOAT  2 
-#define ADDR_TYPE_WORD  1
-#define ADDR_TYPE_SWORD  3
-#define ADDR_TYPE_LONG  4
-#define ADDR_TYPE_COIL  5
-#define ADDR_TYPE_CHAR  5
+#define MB_TYPE_FLOAT  2 
+#define MB_TYPE_WORD  1
+#define MB_TYPE_SWORD  3
+#define MB_TYPE_LONG  4
+#define MB_TYPE_COIL  5
+#define MB_TYPE_CHAR  5
+
+
 
 struct gengetopt_args_info args_info;
-
-struct addr_type {
-	int type;
-	int size;
-};
-
-struct addr_type a_type_float = {
-	.type = ADDR_TYPE_FLOAT,
-	.size = 2
-};
-struct addr_type a_type_word = {
-	.type = ADDR_TYPE_WORD,
-	.size = 1
-};
-struct addr_type a_type_sword = {
-	.type = ADDR_TYPE_SWORD,
-	.size = 1
-};
-struct addr_type a_type_long = {
-	.type = ADDR_TYPE_LONG,
-	.size = 2
-};
-struct addr_type a_type_char = {
-	.type = ADDR_TYPE_CHAR,
-	.size = 1
-};
-struct addr_type a_type_coil = {
-	.type = ADDR_TYPE_COIL,
-	.size = 1
-};
 
 typedef struct reg_list {
 	char name[50];
@@ -111,6 +83,31 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
     ctx->reg_list[ctx->reg_index].conversion = conversion;
     ctx->reg_list[ctx->reg_index].rw = rw;
     strncpy(ctx->reg_list[ctx->reg_index].type,type,11);
+	
+	
+	
+    if (strncmp(type,"uint16",10) == 0) {
+		ctx->reg_list[ctx->reg_index].uint16_val = (uint16_t)atoi(value);
+    }
+
+    if (strncmp(type,"int16",10) == 0) {
+		ctx->reg_list[ctx->reg_index].int16_val = (int16_t)atoi(value);
+    }
+
+    if (strncmp(ctx->reg_list[ctx->reg_index].type,"int8",10) == 0) {
+		ctx->reg_list[ctx->reg_index].int8_val = (int8_t)atoi(value);
+    }
+
+    if (strncmp(ctx->reg_list[ctx->reg_index].type,"float",10) == 0) {
+        fprintf(stderr,"writing float not implemented");
+        exit(1);
+    }
+
+    if (strncmp(ctx->reg_list[ctx->reg_index].type,"coil",10) == 0) {
+		ctx->reg_list[ctx->reg_index].uint8_val = (uint8_t)atoi(value);
+    }
+	
+	
     
     ctx->reg_index++;
     printf("Type: %s\nName: %s\nReg: %u\nValue: %s\nConversion: %f\nR/W: %c\n",type,name,reg,value,conversion,rw);
@@ -171,8 +168,8 @@ void process_registers(struct mb_util_ctx * ctx) {
 	        }
 
 	        if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
-	            rc = modbus_write_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
-				printf("Read coil: %hu\nValue: %hhu\n",ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
+	            rc = modbus_write_bit(ctx->modbus_ctx, ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
+				printf("Write coil: %hu\nValue: %hhu\n",ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
 	        }
         }
     }
