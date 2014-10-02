@@ -237,17 +237,27 @@ int main(int argc, char **argv) {
     }
     
     struct cmdline_parser_params *params;
-     
+    
     /* initialize the parameters structure */
     params = cmdline_parser_params_create();
-    
-    params->initialize = 1;
-    
-     /* call the config file parser */
-    if (cmdline_parser_config_file(args_info.conf_file_arg, &args_info, params) != 0) exit(1);
-    
+	
+	params->initialize = 1;
+	params->override = 1;
+	params->check_required = 0;
+	
 	/* let's call our cmdline parser */
-    if (cmdline_parser (argc, argv, &args_info) != 0) exit(1);
+    if (cmdline_parser_ext (argc, argv, &args_info, params) != 0) exit(1);
+	
+	params->initialize = 0;
+	params->override = 0;
+	params->check_required = 1;
+	
+	if (args_info.conf_file_given) {
+		printf("Reading config\n");
+     	/* call the config file parser */
+    	if (cmdline_parser_config_file(args_info.conf_file_arg, &args_info, params) != 0) exit(1);
+	}
+
     
     struct mb_util_ctx mb_instance;
     mb_instance.reg_list = (reg_list_t *) malloc(sizeof(reg_list_t) * args_info.reg_given);

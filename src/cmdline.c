@@ -39,9 +39,9 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --host=STRING       IP adress of power gteway.  (default=`10.0.0.5')",
   "  -i, --interval=INT      Time between measurements in seconds  (default=`0')",
   "  -d, --debug             Show protocol debug information  (default=off)",
-  "  -n, --name=STRING       Name of the application",
+  "  -n, --name=STRING       Name of the application  (default=`modbus')",
   "      --include-date      add a date to the output  (default=off)",
-  "  -C, --conf_file=STRING  Configuration file",
+  "  -C, --conf-file=STRING  Configuration file",
   "  -g, --reg=STRING        Define a register to read or write",
   "\n Mode: read",
   "  -r, --read              Read registers  (default=on)",
@@ -122,7 +122,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->interval_arg = 0;
   args_info->interval_orig = NULL;
   args_info->debug_flag = 0;
-  args_info->name_arg = NULL;
+  args_info->name_arg = gengetopt_strdup ("modbus");
   args_info->name_orig = NULL;
   args_info->include_date_flag = 0;
   args_info->conf_file_arg = NULL;
@@ -341,7 +341,7 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
   if (args_info->include_date_given)
     write_into_file(outfile, "include-date", 0, 0 );
   if (args_info->conf_file_given)
-    write_into_file(outfile, "conf_file", args_info->conf_file_orig, 0);
+    write_into_file(outfile, "conf-file", args_info->conf_file_orig, 0);
   write_multiple_into_file(outfile, args_info->reg_given, "reg", args_info->reg_orig, 0);
   if (args_info->read_given)
     write_into_file(outfile, "read", 0, 0 );
@@ -935,7 +935,7 @@ cmdline_parser_internal (
         { "debug",	0, NULL, 'd' },
         { "name",	1, NULL, 'n' },
         { "include-date",	0, NULL, 0 },
-        { "conf_file",	1, NULL, 'C' },
+        { "conf-file",	1, NULL, 'C' },
         { "reg",	1, NULL, 'g' },
         { "read",	0, NULL, 'r' },
         { "write",	0, NULL, 'w' },
@@ -992,7 +992,7 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->name_arg), 
                &(args_info->name_orig), &(args_info->name_given),
-              &(local_args_info.name_given), optarg, 0, 0, ARG_STRING,
+              &(local_args_info.name_given), optarg, 0, "modbus", ARG_STRING,
               check_ambiguity, override, 0, 0,
               "name", 'n',
               additional_error))
@@ -1006,7 +1006,7 @@ cmdline_parser_internal (
                &(args_info->conf_file_orig), &(args_info->conf_file_given),
               &(local_args_info.conf_file_given), optarg, 0, 0, ARG_STRING,
               check_ambiguity, override, 0, 0,
-              "conf_file", 'C',
+              "conf-file", 'C',
               additional_error))
             goto failure;
         

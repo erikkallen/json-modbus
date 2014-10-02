@@ -47,7 +47,7 @@ struct gengetopt_args_info
   const char *interval_help; /**< @brief Time between measurements in seconds help description.  */
   int debug_flag;	/**< @brief Show protocol debug information (default=off).  */
   const char *debug_help; /**< @brief Show protocol debug information help description.  */
-  char * name_arg;	/**< @brief Name of the application.  */
+  char * name_arg;	/**< @brief Name of the application (default='modbus').  */
   char * name_orig;	/**< @brief Name of the application original value given at command line.  */
   const char *name_help; /**< @brief Name of the application help description.  */
   int include_date_flag;	/**< @brief add a date to the output (default=off).  */
@@ -72,7 +72,7 @@ struct gengetopt_args_info
   unsigned int debug_given ;	/**< @brief Whether debug was given.  */
   unsigned int name_given ;	/**< @brief Whether name was given.  */
   unsigned int include_date_given ;	/**< @brief Whether include-date was given.  */
-  unsigned int conf_file_given ;	/**< @brief Whether conf_file was given.  */
+  unsigned int conf_file_given ;	/**< @brief Whether conf-file was given.  */
   unsigned int reg_given ;	/**< @brief Whether reg was given.  */
   unsigned int read_given ;	/**< @brief Whether read was given.  */
   unsigned int write_given ;	/**< @brief Whether write was given.  */
