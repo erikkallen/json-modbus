@@ -148,7 +148,33 @@ void process_registers(struct mb_util_ctx * ctx) {
 	        }
         }
     } else { // Write registers
-    	
+    	for (int i=0;i<ctx->reg_index;i++) {
+	        printf("Writing: reg: %hu\n",ctx->reg_list[i].address);
+	        if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
+	            rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
+	            rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
+	            rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
+                fprintf(stderr,"writing float not implemented");
+                exit(1);
+	            //uint16_t tmp[2];
+	            //rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
+	            //ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
+	            rc = modbus_write_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
+				printf("Read coil: %hu\nValue: %hhu\n",ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
+	        }
+        }
     }
 }
 
