@@ -39,9 +39,13 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --host=STRING   IP adress of power gteway.  (default=`10.0.0.5')",
   "  -i, --interval=INT  Time between measurements in seconds  (default=`0')",
   "  -d, --debug         Show protocol debug information  (default=off)",
-  "  -n, --name=STRING   Name of the application",
+  "  -n, --name=STRING   Name of the application  (default=`modbus')",
   "      --include-date  add a date to the output  (default=off)",
-  "  -r, --reg=STRING    Define a register to read or write",
+  "  -g, --reg=STRING    Define a register to read or write",
+  "\n Mode: read",
+  "  -r, --read          Read registers  (default=on)",
+  "\n Mode: write",
+  "  -w, --write         Write registers  (default=off)",
     0
 };
 
@@ -77,6 +81,10 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->name_given = 0 ;
   args_info->include_date_given = 0 ;
   args_info->reg_given = 0 ;
+  args_info->read_given = 0 ;
+  args_info->write_given = 0 ;
+  args_info->read_mode_counter = 0 ;
+  args_info->write_mode_counter = 0 ;
 }
 
 static
@@ -88,11 +96,13 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->interval_arg = 0;
   args_info->interval_orig = NULL;
   args_info->debug_flag = 0;
-  args_info->name_arg = NULL;
+  args_info->name_arg = gengetopt_strdup ("modbus");
   args_info->name_orig = NULL;
   args_info->include_date_flag = 0;
   args_info->reg_arg = NULL;
   args_info->reg_orig = NULL;
+  args_info->read_flag = 1;
+  args_info->write_flag = 0;
   
 }
 
@@ -111,6 +121,8 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->reg_help = gengetopt_args_info_help[7] ;
   args_info->reg_min = 0;
   args_info->reg_max = 0;
+  args_info->read_help = gengetopt_args_info_help[9] ;
+  args_info->write_help = gengetopt_args_info_help[11] ;
   
 }
 
@@ -298,6 +310,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
   if (args_info->include_date_given)
     write_into_file(outfile, "include-date", 0, 0 );
   write_multiple_into_file(outfile, args_info->reg_given, "reg", args_info->reg_orig, 0);
+  if (args_info->read_given)
+    write_into_file(outfile, "read", 0, 0 );
+  if (args_info->write_given)
+    write_into_file(outfile, "write", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -561,7 +577,7 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
       error_occurred = 1;
     }
   
-  if (check_multiple_option_occurrences(prog_name, args_info->reg_given, args_info->reg_min, args_info->reg_max, "'--reg' ('-r')"))
+  if (check_multiple_option_occurrences(prog_name, args_info->reg_given, args_info->reg_min, args_info->reg_max, "'--reg' ('-g')"))
      error_occurred = 1;
   
   
@@ -818,6 +834,29 @@ void update_multiple_arg(void *field, char ***orig_field,
   }
 }
 
+static int check_modes(
+  int given1[], const char *options1[],
+                       int given2[], const char *options2[])
+{
+  int i = 0, j = 0, errors = 0;
+  
+  while (given1[i] >= 0) {
+    if (given1[i]) {
+      while (given2[j] >= 0) {
+        if (given2[j]) {
+          ++errors;
+          fprintf(stderr, "%s: option %s conflicts with option %s\n",
+                  package_name, options1[i], options2[j]);
+        }
+        ++j;
+      }
+    }
+    ++i;
+  }
+  
+  return errors;
+}
+
 int
 cmdline_parser_internal (
   int argc, char **argv, struct gengetopt_args_info *args_info,
@@ -863,11 +902,13 @@ cmdline_parser_internal (
         { "debug",	0, NULL, 'd' },
         { "name",	1, NULL, 'n' },
         { "include-date",	0, NULL, 0 },
-        { "reg",	1, NULL, 'r' },
+        { "reg",	1, NULL, 'g' },
+        { "read",	0, NULL, 'r' },
+        { "write",	0, NULL, 'w' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "Vh:i:dn:r:", long_options, &option_index);
+      c = getopt_long (argc, argv, "Vh:i:dn:g:rw", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -917,18 +958,40 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->name_arg), 
                &(args_info->name_orig), &(args_info->name_given),
-              &(local_args_info.name_given), optarg, 0, 0, ARG_STRING,
+              &(local_args_info.name_given), optarg, 0, "modbus", ARG_STRING,
               check_ambiguity, override, 0, 0,
               "name", 'n',
               additional_error))
             goto failure;
         
           break;
-        case 'r':	/* Define a register to read or write.  */
+        case 'g':	/* Define a register to read or write.  */
         
           if (update_multiple_arg_temp(&reg_list, 
               &(local_args_info.reg_given), optarg, 0, 0, ARG_STRING,
-              "reg", 'r',
+              "reg", 'g',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'r':	/* Read registers.  */
+          args_info->read_mode_counter += 1;
+        
+        
+          if (update_arg((void *)&(args_info->read_flag), 0, &(args_info->read_given),
+              &(local_args_info.read_given), optarg, 0, 0, ARG_FLAG,
+              check_ambiguity, override, 1, 0, "read", 'r',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'w':	/* Write registers.  */
+          args_info->write_mode_counter += 1;
+        
+        
+          if (update_arg((void *)&(args_info->write_flag), 0, &(args_info->write_given),
+              &(local_args_info.write_given), optarg, 0, 0, ARG_FLAG,
+              check_ambiguity, override, 1, 0, "write", 'w',
               additional_error))
             goto failure;
         
@@ -973,6 +1036,14 @@ cmdline_parser_internal (
 
   args_info->reg_given += local_args_info.reg_given;
   local_args_info.reg_given = 0;
+  
+  if (args_info->read_mode_counter && args_info->write_mode_counter) {
+    int read_given[] = {args_info->read_given,  -1};
+    const char *read_desc[] = {"--read",  0};
+    int write_given[] = {args_info->write_given,  -1};
+    const char *write_desc[] = {"--write",  0};
+    error_occurred += check_modes(read_given, read_desc, write_given, write_desc);
+  }
   
   if (check_required)
     {

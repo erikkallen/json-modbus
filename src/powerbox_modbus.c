@@ -74,6 +74,7 @@ struct mb_util_ctx {
     uint16_t reg_index;
     modbus_t *modbus_ctx;
 	char name[51];
+	char rw;
 };
 
 //#define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
@@ -103,7 +104,7 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
     float conversion;
     char rw;
     // --reg "type name reg r/w conversion value"
-    sscanf(def_str, "%10s%50s%hu %1c%f%10s",type,name,&reg,&rw,&conversion,value);
+    sscanf(def_str, "%10s%50s%hu %f%10s",type,name,&reg,&conversion,value);
     
     ctx->reg_list[ctx->reg_index].address = reg;
     strncpy(ctx->reg_list[ctx->reg_index].name,name,50);
@@ -118,33 +119,36 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
 
 void process_registers(struct mb_util_ctx * ctx) {
     printf("Process registers: %d\n",ctx->reg_index);
-    for (int i=0;i<ctx->reg_index;i++) {
-        printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
-        if (ctx->reg_list[i].rw == 'r') {
-            printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
-            if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
-                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
-                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
-                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
-                uint16_t tmp[2];
-                rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
-                ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
-                rc = modbus_read_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
+	printf("Reg list rw: %c\n",ctx->rw);
+	// Read registers
+	if (ctx->rw == 'r') {
+    	for (int i=0;i<ctx->reg_index;i++) {
+	        printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
+	        if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
+	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
+	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
+	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
+	            uint16_t tmp[2];
+	            rc = modbus_read_input_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
+	            ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
+	        }
+
+	        if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
+	            rc = modbus_read_bits(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint8_val);
 				printf("Read coil: %hu\nValue: %hhu\n",ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
-            }
+	        }
         }
+    } else { // Write registers
+    	
     }
 }
 
@@ -154,39 +158,37 @@ void print_registers(struct mb_util_ctx * ctx) {
 	printf("\t\"%s\": {\n", ctx->name);
     for (int i=0;i<ctx->reg_index;i++) {
         //printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
-        if (ctx->reg_list[i].rw == 'r') {
-            //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
-            if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
-                //printf("uint16: %hu\n", ctx->reg_list[i].uint16_val);
-				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val * ctx->reg_list[i].conversion);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
-                //printf("int16: %hd\n", ctx->reg_list[i].int16_val);
-				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int16_val * ctx->reg_list[i].conversion);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
-                //printf("int8: %d\n", ctx->reg_list[i].int8_val);
-				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int8_val * ctx->reg_list[i].conversion);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
-                //printf("float: %f\n", ctx->reg_list[i].float_val);
-				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val * ctx->reg_list[i].conversion);
-            }
-    
-            if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
-                //printf("coil: %hhu\n", ctx->reg_list[i].uint8_val);
-				printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val * ctx->reg_list[i].conversion);
-            }
-			// Last item in list
-			if (i != ctx->reg_index - 1) {
-				printf(",\n");
-			} else {
-				printf("\n");
-			}
+        //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
+        if (strncmp(ctx->reg_list[ctx->reg_index].type,"uint16",10) == 0) {
+            //printf("uint16: %hu\n", ctx->reg_list[i].uint16_val);
+			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val * ctx->reg_list[i].conversion);
         }
+
+        if (strncmp(ctx->reg_list[i].type,"int16",10) == 0) {
+            //printf("int16: %hd\n", ctx->reg_list[i].int16_val);
+			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int16_val * ctx->reg_list[i].conversion);
+        }
+
+        if (strncmp(ctx->reg_list[i].type,"int8",10) == 0) {
+            //printf("int8: %d\n", ctx->reg_list[i].int8_val);
+			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int8_val * ctx->reg_list[i].conversion);
+        }
+
+        if (strncmp(ctx->reg_list[i].type,"float",10) == 0) {
+            //printf("float: %f\n", ctx->reg_list[i].float_val);
+			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val * ctx->reg_list[i].conversion);
+        }
+
+        if (strncmp(ctx->reg_list[i].type,"coil",10) == 0) {
+            //printf("coil: %hhu\n", ctx->reg_list[i].uint8_val);
+			printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val * ctx->reg_list[i].conversion);
+        }
+		// Last item in list
+		if (i != ctx->reg_index - 1) {
+			printf(",\n");
+		} else {
+			printf("\n");
+		}
     }
 	printf("\t}\n");
 	printf("}\n");
@@ -203,6 +205,13 @@ int main(int argc, char **argv) {
     struct mb_util_ctx mb_instance;
     mb_instance.reg_list = (reg_list_t *) malloc(sizeof(reg_list_t) * args_info.reg_given);
     mb_instance.reg_index = 0;
+	if (args_info.write_flag == true) {
+		printf ("Write registers\n");
+		mb_instance.rw = 'w';
+	} else {
+		printf ("Read registers\n");
+		mb_instance.rw = 'r';
+	}
 	// Copy system name
 	strncpy(mb_instance.name,args_info.name_arg,49);
     

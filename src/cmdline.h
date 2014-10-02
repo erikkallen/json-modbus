@@ -47,7 +47,7 @@ struct gengetopt_args_info
   const char *interval_help; /**< @brief Time between measurements in seconds help description.  */
   int debug_flag;	/**< @brief Show protocol debug information (default=off).  */
   const char *debug_help; /**< @brief Show protocol debug information help description.  */
-  char * name_arg;	/**< @brief Name of the application.  */
+  char * name_arg;	/**< @brief Name of the application (default='modbus').  */
   char * name_orig;	/**< @brief Name of the application original value given at command line.  */
   const char *name_help; /**< @brief Name of the application help description.  */
   int include_date_flag;	/**< @brief add a date to the output (default=off).  */
@@ -57,6 +57,10 @@ struct gengetopt_args_info
   unsigned int reg_min; /**< @brief Define a register to read or write's minimum occurreces */
   unsigned int reg_max; /**< @brief Define a register to read or write's maximum occurreces */
   const char *reg_help; /**< @brief Define a register to read or write help description.  */
+  int read_flag;	/**< @brief Read registers (default=on).  */
+  const char *read_help; /**< @brief Read registers help description.  */
+  int write_flag;	/**< @brief Write registers (default=off).  */
+  const char *write_help; /**< @brief Write registers help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -66,7 +70,11 @@ struct gengetopt_args_info
   unsigned int name_given ;	/**< @brief Whether name was given.  */
   unsigned int include_date_given ;	/**< @brief Whether include-date was given.  */
   unsigned int reg_given ;	/**< @brief Whether reg was given.  */
+  unsigned int read_given ;	/**< @brief Whether read was given.  */
+  unsigned int write_given ;	/**< @brief Whether write was given.  */
 
+  int read_mode_counter; /**< @brief Counter for mode read */
+  int write_mode_counter; /**< @brief Counter for mode write */
 } ;
 
 /** @brief The additional parameters to pass to parser functions */
