@@ -47,11 +47,14 @@ struct gengetopt_args_info
   const char *interval_help; /**< @brief Time between measurements in seconds help description.  */
   int debug_flag;	/**< @brief Show protocol debug information (default=off).  */
   const char *debug_help; /**< @brief Show protocol debug information help description.  */
-  char * name_arg;	/**< @brief Name of the application (default='modbus').  */
+  char * name_arg;	/**< @brief Name of the application.  */
   char * name_orig;	/**< @brief Name of the application original value given at command line.  */
   const char *name_help; /**< @brief Name of the application help description.  */
   int include_date_flag;	/**< @brief add a date to the output (default=off).  */
   const char *include_date_help; /**< @brief add a date to the output help description.  */
+  char * conf_file_arg;	/**< @brief Configuration file.  */
+  char * conf_file_orig;	/**< @brief Configuration file original value given at command line.  */
+  const char *conf_file_help; /**< @brief Configuration file help description.  */
   char ** reg_arg;	/**< @brief Define a register to read or write.  */
   char ** reg_orig;	/**< @brief Define a register to read or write original value given at command line.  */
   unsigned int reg_min; /**< @brief Define a register to read or write's minimum occurreces */
@@ -69,6 +72,7 @@ struct gengetopt_args_info
   unsigned int debug_given ;	/**< @brief Whether debug was given.  */
   unsigned int name_given ;	/**< @brief Whether name was given.  */
   unsigned int include_date_given ;	/**< @brief Whether include-date was given.  */
+  unsigned int conf_file_given ;	/**< @brief Whether conf_file was given.  */
   unsigned int reg_given ;	/**< @brief Whether reg was given.  */
   unsigned int read_given ;	/**< @brief Whether read was given.  */
   unsigned int write_given ;	/**< @brief Whether write was given.  */
@@ -187,6 +191,31 @@ void cmdline_parser_init (struct gengetopt_args_info *args_info);
  * @param args_info the structure to deallocate
  */
 void cmdline_parser_free (struct gengetopt_args_info *args_info);
+
+/**
+ * The config file parser (deprecated version)
+ * @param filename the name of the config file
+ * @param args_info the structure where option information will be stored
+ * @param override whether to override possibly already present options
+ * @param initialize whether to initialize the option structure my_args_info
+ * @param check_required whether to check that all required options were provided
+ * @return 0 if everything went fine, NON 0 if an error took place
+ * @deprecated use cmdline_parser_config_file() instead
+ */
+int cmdline_parser_configfile (const char *filename,
+  struct gengetopt_args_info *args_info,
+  int override, int initialize, int check_required);
+
+/**
+ * The config file parser
+ * @param filename the name of the config file
+ * @param args_info the structure where option information will be stored
+ * @param params additional parameters for the parser
+ * @return 0 if everything went fine, NON 0 if an error took place
+ */
+int cmdline_parser_config_file (const char *filename,
+  struct gengetopt_args_info *args_info,
+  struct cmdline_parser_params *params);
 
 /**
  * Checks that all the required options were specified

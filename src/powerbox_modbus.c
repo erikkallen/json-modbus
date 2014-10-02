@@ -235,6 +235,17 @@ int main(int argc, char **argv) {
         DEBUG_MSG("An error occurred while setting a signal handler.\n");
         return EXIT_FAILURE;
     }
+    
+    struct cmdline_parser_params *params;
+     
+    /* initialize the parameters structure */
+    params = cmdline_parser_params_create();
+    
+    params->initialize = 1;
+    
+     /* call the config file parser */
+    if (cmdline_parser_config_file(args_info.conf_file_arg, &args_info, params) != 0) exit(1);
+    
 	/* let's call our cmdline parser */
     if (cmdline_parser (argc, argv, &args_info) != 0) exit(1);
     

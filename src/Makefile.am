@@ -5,4 +5,4 @@ powerbox_modbus_LDADD =  $(MODBUS_LIBS)
 
 
 cmdline.c: $(top_srcdir)/powerbox_modbus.ggo
-	gengetopt < $(top_srcdir)/powerbox_modbus.ggo
+	gengetopt -C < $(top_srcdir)/powerbox_modbus.ggo

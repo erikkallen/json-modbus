@@ -12,6 +12,7 @@ option "interval" i "Time between measurements in seconds" default="0" int optio
 option "debug" d "Show protocol debug information" flag off
 option "name" n "Name of the application" default="modbus" string
 option "include-date" - "add a date to the output" flag off
+option "conf_file" C "Configuration file" string optional
 option "reg" g "Define a register to read or write" string optional multiple
 
 defmode "read"
@@ -19,4 +20,3 @@ defmode "write"
 
 modeoption "read" r "Read registers" mode="read" flag on
 modeoption "write" w "Write registers" mode="write" flag off
-
