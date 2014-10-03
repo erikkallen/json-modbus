@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
 	    DEBUG_MSG("Unable to create the libmodbus context\n");
 	    return -1;
 	}
-	//modbus_set_slave(ctx, 0);
+	modbus_set_slave(mb_instance.modbus_ctx, 1);
 	modbus_set_debug(mb_instance.modbus_ctx,args_info.debug_flag);
     debug_mode = args_info.debug_flag;
 	
@@ -297,6 +297,10 @@ int main(int argc, char **argv) {
 	rt.tv_usec=0;
 	modbus_set_response_timeout(mb_instance.modbus_ctx, &rt);
 	*/
+	rt.tv_sec=args_info.timeout_arg;
+	rt.tv_usec=0;
+    modbus_set_response_timeout(mb_instance.modbus_ctx, &rt);
+    
 	if (modbus_connect(mb_instance.modbus_ctx) == -1) {
 	    DEBUG_MSG("Connection failed: %s\n", modbus_strerror(errno));
 	    modbus_free(mb_instance.modbus_ctx);

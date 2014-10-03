@@ -29,7 +29,7 @@ const char *gengetopt_args_info_purpose = "This application reads the output fro
 
 const char *gengetopt_args_info_usage = "Usage: powerbox_modbus [OPTIONS]...";
 
-const char *gengetopt_args_info_versiontext = "";
+const char *gengetopt_args_info_versiontext = GIT_VERSION;
 
 const char *gengetopt_args_info_description = "";
 
@@ -43,6 +43,7 @@ const char *gengetopt_args_info_help[] = {
   "      --include-date      add a date to the output  (default=off)",
   "  -C, --conf-file=STRING  Configuration file",
   "  -g, --reg=STRING        Define a register to read or write",
+  "  -t, --timeout=INT       Set the response timeout  (default=`1')",
   "\n Mode: read",
   "  -r, --read              Read registers  (default=on)",
   "\n Mode: write",
@@ -107,6 +108,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->include_date_given = 0 ;
   args_info->conf_file_given = 0 ;
   args_info->reg_given = 0 ;
+  args_info->timeout_given = 0 ;
   args_info->read_given = 0 ;
   args_info->write_given = 0 ;
   args_info->read_mode_counter = 0 ;
@@ -129,6 +131,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->conf_file_orig = NULL;
   args_info->reg_arg = NULL;
   args_info->reg_orig = NULL;
+  args_info->timeout_arg = 1;
+  args_info->timeout_orig = NULL;
   args_info->read_flag = 1;
   args_info->write_flag = 0;
   
@@ -150,8 +154,9 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->reg_help = gengetopt_args_info_help[8] ;
   args_info->reg_min = 0;
   args_info->reg_max = 0;
-  args_info->read_help = gengetopt_args_info_help[10] ;
-  args_info->write_help = gengetopt_args_info_help[12] ;
+  args_info->timeout_help = gengetopt_args_info_help[9] ;
+  args_info->read_help = gengetopt_args_info_help[11] ;
+  args_info->write_help = gengetopt_args_info_help[13] ;
   
 }
 
@@ -288,6 +293,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->conf_file_arg));
   free_string_field (&(args_info->conf_file_orig));
   free_multiple_string_field (args_info->reg_given, &(args_info->reg_arg), &(args_info->reg_orig));
+  free_string_field (&(args_info->timeout_orig));
   
   
 
@@ -343,6 +349,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
   if (args_info->conf_file_given)
     write_into_file(outfile, "conf-file", args_info->conf_file_orig, 0);
   write_multiple_into_file(outfile, args_info->reg_given, "reg", args_info->reg_orig, 0);
+  if (args_info->timeout_given)
+    write_into_file(outfile, "timeout", args_info->timeout_orig, 0);
   if (args_info->read_given)
     write_into_file(outfile, "read", 0, 0 );
   if (args_info->write_given)
@@ -612,6 +620,12 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   
   if (check_multiple_option_occurrences(prog_name, args_info->reg_given, args_info->reg_min, args_info->reg_max, "'--reg' ('-g')"))
      error_occurred = 1;
+  
+  if (! args_info->timeout_given)
+    {
+      fprintf (stderr, "%s: '--timeout' ('-t') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error_occurred = 1;
+    }
   
   
   /* checks for dependences among options */
@@ -937,12 +951,13 @@ cmdline_parser_internal (
         { "include-date",	0, NULL, 0 },
         { "conf-file",	1, NULL, 'C' },
         { "reg",	1, NULL, 'g' },
+        { "timeout",	1, NULL, 't' },
         { "read",	0, NULL, 'r' },
         { "write",	0, NULL, 'w' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "Vh:i:dn:C:g:rw", long_options, &option_index);
+      c = getopt_long (argc, argv, "Vh:i:dn:C:g:t:rw", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1016,6 +1031,18 @@ cmdline_parser_internal (
           if (update_multiple_arg_temp(&reg_list, 
               &(local_args_info.reg_given), optarg, 0, 0, ARG_STRING,
               "reg", 'g',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 't':	/* Set the response timeout.  */
+        
+        
+          if (update_arg( (void *)&(args_info->timeout_arg), 
+               &(args_info->timeout_orig), &(args_info->timeout_given),
+              &(local_args_info.timeout_given), optarg, 0, "1", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "timeout", 't',
               additional_error))
             goto failure;
         

@@ -3,7 +3,7 @@ version "1.0.0"
 purpose "This application reads the output from the weather station and sends it via json to the given ip address."
 #usage ""
 #description "This application reads the output from the weather station and sends it via json to the given ip address."
-#versiontext "<versiontext>"
+versiontext "GIT_VERSION"
  
 args "<command line options>"	
 
@@ -14,6 +14,7 @@ option "name" n "Name of the application" default="modbus" string
 option "include-date" - "add a date to the output" flag off
 option "conf-file" C "Configuration file" string optional
 option "reg" g "Define a register to read or write" string optional multiple
+option "timeout" t "Set the response timeout" default="1" int
 
 defmode "read"
 defmode "write"

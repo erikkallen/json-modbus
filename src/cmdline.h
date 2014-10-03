@@ -60,6 +60,9 @@ struct gengetopt_args_info
   unsigned int reg_min; /**< @brief Define a register to read or write's minimum occurreces */
   unsigned int reg_max; /**< @brief Define a register to read or write's maximum occurreces */
   const char *reg_help; /**< @brief Define a register to read or write help description.  */
+  int timeout_arg;	/**< @brief Set the response timeout (default='1').  */
+  char * timeout_orig;	/**< @brief Set the response timeout original value given at command line.  */
+  const char *timeout_help; /**< @brief Set the response timeout help description.  */
   int read_flag;	/**< @brief Read registers (default=on).  */
   const char *read_help; /**< @brief Read registers help description.  */
   int write_flag;	/**< @brief Write registers (default=off).  */
@@ -74,6 +77,7 @@ struct gengetopt_args_info
   unsigned int include_date_given ;	/**< @brief Whether include-date was given.  */
   unsigned int conf_file_given ;	/**< @brief Whether conf-file was given.  */
   unsigned int reg_given ;	/**< @brief Whether reg was given.  */
+  unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
   unsigned int read_given ;	/**< @brief Whether read was given.  */
   unsigned int write_given ;	/**< @brief Whether write was given.  */
 
