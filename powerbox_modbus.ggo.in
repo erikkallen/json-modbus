@@ -7,7 +7,8 @@ versiontext "GIT_VERSION"
  
 args "<command line options>"	
 
-option "host" h "IP adress of power gteway." default="/dev/ttyS1" default="10.0.0.5" string
+option "host" h "IP adress of modbus device." default="10.0.0.5" string
+option "port" p "Port of modbus device." default="502" int
 option "interval" i "Time between measurements in seconds" default="0" int optional
 option "debug" d "Show protocol debug information" flag off
 option "name" n "Name of the application" default="modbus" string

@@ -39,9 +39,12 @@ struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
-  char * host_arg;	/**< @brief IP adress of power gteway. (default='10.0.0.5').  */
-  char * host_orig;	/**< @brief IP adress of power gteway. original value given at command line.  */
-  const char *host_help; /**< @brief IP adress of power gteway. help description.  */
+  char * host_arg;	/**< @brief IP adress of modbus device. (default='10.0.0.5').  */
+  char * host_orig;	/**< @brief IP adress of modbus device. original value given at command line.  */
+  const char *host_help; /**< @brief IP adress of modbus device. help description.  */
+  int port_arg;	/**< @brief Port of modbus device. (default='502').  */
+  char * port_orig;	/**< @brief Port of modbus device. original value given at command line.  */
+  const char *port_help; /**< @brief Port of modbus device. help description.  */
   int interval_arg;	/**< @brief Time between measurements in seconds (default='0').  */
   char * interval_orig;	/**< @brief Time between measurements in seconds original value given at command line.  */
   const char *interval_help; /**< @brief Time between measurements in seconds help description.  */
@@ -71,6 +74,7 @@ struct gengetopt_args_info
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
+  unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int interval_given ;	/**< @brief Whether interval was given.  */
   unsigned int debug_given ;	/**< @brief Whether debug was given.  */
   unsigned int name_given ;	/**< @brief Whether name was given.  */

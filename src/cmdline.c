@@ -36,7 +36,8 @@ const char *gengetopt_args_info_description = "";
 const char *gengetopt_args_info_help[] = {
   "      --help              Print help and exit",
   "  -V, --version           Print version and exit",
-  "  -h, --host=STRING       IP adress of power gteway.  (default=`10.0.0.5')",
+  "  -h, --host=STRING       IP adress of modbus device.  (default=`10.0.0.5')",
+  "  -p, --port=INT          Port of modbus device.  (default=`502')",
   "  -i, --interval=INT      Time between measurements in seconds  (default=`0')",
   "  -d, --debug             Show protocol debug information  (default=off)",
   "  -n, --name=STRING       Name of the application  (default=`modbus')",
@@ -102,6 +103,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->host_given = 0 ;
+  args_info->port_given = 0 ;
   args_info->interval_given = 0 ;
   args_info->debug_given = 0 ;
   args_info->name_given = 0 ;
@@ -121,6 +123,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->host_arg = gengetopt_strdup ("10.0.0.5");
   args_info->host_orig = NULL;
+  args_info->port_arg = 502;
+  args_info->port_orig = NULL;
   args_info->interval_arg = 0;
   args_info->interval_orig = NULL;
   args_info->debug_flag = 0;
@@ -146,17 +150,18 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->help_help = gengetopt_args_info_help[0] ;
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->host_help = gengetopt_args_info_help[2] ;
-  args_info->interval_help = gengetopt_args_info_help[3] ;
-  args_info->debug_help = gengetopt_args_info_help[4] ;
-  args_info->name_help = gengetopt_args_info_help[5] ;
-  args_info->include_date_help = gengetopt_args_info_help[6] ;
-  args_info->conf_file_help = gengetopt_args_info_help[7] ;
-  args_info->reg_help = gengetopt_args_info_help[8] ;
+  args_info->port_help = gengetopt_args_info_help[3] ;
+  args_info->interval_help = gengetopt_args_info_help[4] ;
+  args_info->debug_help = gengetopt_args_info_help[5] ;
+  args_info->name_help = gengetopt_args_info_help[6] ;
+  args_info->include_date_help = gengetopt_args_info_help[7] ;
+  args_info->conf_file_help = gengetopt_args_info_help[8] ;
+  args_info->reg_help = gengetopt_args_info_help[9] ;
   args_info->reg_min = 0;
   args_info->reg_max = 0;
-  args_info->timeout_help = gengetopt_args_info_help[9] ;
-  args_info->read_help = gengetopt_args_info_help[11] ;
-  args_info->write_help = gengetopt_args_info_help[13] ;
+  args_info->timeout_help = gengetopt_args_info_help[10] ;
+  args_info->read_help = gengetopt_args_info_help[12] ;
+  args_info->write_help = gengetopt_args_info_help[14] ;
   
 }
 
@@ -287,6 +292,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->host_arg));
   free_string_field (&(args_info->host_orig));
+  free_string_field (&(args_info->port_orig));
   free_string_field (&(args_info->interval_orig));
   free_string_field (&(args_info->name_arg));
   free_string_field (&(args_info->name_orig));
@@ -338,6 +344,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->host_given)
     write_into_file(outfile, "host", args_info->host_orig, 0);
+  if (args_info->port_given)
+    write_into_file(outfile, "port", args_info->port_orig, 0);
   if (args_info->interval_given)
     write_into_file(outfile, "interval", args_info->interval_orig, 0);
   if (args_info->debug_given)
@@ -609,6 +617,12 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   if (! args_info->host_given)
     {
       fprintf (stderr, "%s: '--host' ('-h') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error_occurred = 1;
+    }
+  
+  if (! args_info->port_given)
+    {
+      fprintf (stderr, "%s: '--port' ('-p') option required%s\n", prog_name, (additional_error ? additional_error : ""));
       error_occurred = 1;
     }
   
@@ -945,6 +959,7 @@ cmdline_parser_internal (
         { "help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
         { "host",	1, NULL, 'h' },
+        { "port",	1, NULL, 'p' },
         { "interval",	1, NULL, 'i' },
         { "debug",	0, NULL, 'd' },
         { "name",	1, NULL, 'n' },
@@ -957,7 +972,7 @@ cmdline_parser_internal (
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "Vh:i:dn:C:g:t:rw", long_options, &option_index);
+      c = getopt_long (argc, argv, "Vh:p:i:dn:C:g:t:rw", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -968,7 +983,7 @@ cmdline_parser_internal (
           cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
-        case 'h':	/* IP adress of power gteway..  */
+        case 'h':	/* IP adress of modbus device..  */
         
         
           if (update_arg( (void *)&(args_info->host_arg), 
@@ -976,6 +991,18 @@ cmdline_parser_internal (
               &(local_args_info.host_given), optarg, 0, "10.0.0.5", ARG_STRING,
               check_ambiguity, override, 0, 0,
               "host", 'h',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'p':	/* Port of modbus device..  */
+        
+        
+          if (update_arg( (void *)&(args_info->port_arg), 
+               &(args_info->port_orig), &(args_info->port_given),
+              &(local_args_info.port_given), optarg, 0, "502", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "port", 'p',
               additional_error))
             goto failure;
         
