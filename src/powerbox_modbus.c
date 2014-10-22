@@ -276,7 +276,7 @@ void print_registers(struct mb_util_ctx * ctx) {
             			printf(",");
             		}
                 }
-                printf("]\n");
+                printf("]");
                 // Cleanup memory
                 free(ctx->reg_list[i].float_array);
             break;
