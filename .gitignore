@@ -45,6 +45,6 @@ config.status
 *.i*86
 *.x86_64
 *.hex
-src/powerbox_modbus
+src/json_modbus
 test/http_server_test
 test/rtu_server_test
