@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.60])
-AC_INIT(powerbox_modbus, 1.0.0, corpeters@incas3.eu)
+AC_INIT(json_modbus, 1.0.1, erikkallen@incas3.eu)
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign])

@@ -1,8 +1,6 @@
-package "powerbox_modbus"
-version "1.0.0"
-purpose "This application reads the output from the weather station and sends it via json to the given ip address."
-#usage ""
-#description "This application reads the output from the weather station and sends it via json to the given ip address."
+package "@PACKAGE_NAME@"
+version "@PACKAGE_VERSION@"
+purpose "This application reads a device using the modbus protocol and returns the result in json format."
 versiontext "GIT_VERSION"
  
 args "<command line options>"	
