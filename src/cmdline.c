@@ -25,9 +25,9 @@
 
 #include "cmdline.h"
 
-const char *gengetopt_args_info_purpose = "This application reads the output from the weather station and sends it via\njson to the given ip address.";
+const char *gengetopt_args_info_purpose = "This application reads a device using the modbus protocol and returns the\nresult in json format.";
 
-const char *gengetopt_args_info_usage = "Usage: powerbox_modbus [OPTIONS]...";
+const char *gengetopt_args_info_usage = "Usage: json_modbus [OPTIONS]...";
 
 const char *gengetopt_args_info_versiontext = GIT_VERSION;
 

@@ -21,17 +21,17 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_PACKAGE
 /** @brief the program name (used for printing errors) */
-#define CMDLINE_PARSER_PACKAGE "powerbox_modbus"
+#define CMDLINE_PARSER_PACKAGE "json_modbus"
 #endif
 
 #ifndef CMDLINE_PARSER_PACKAGE_NAME
 /** @brief the complete program name (used for help and version) */
-#define CMDLINE_PARSER_PACKAGE_NAME "powerbox_modbus"
+#define CMDLINE_PARSER_PACKAGE_NAME "json_modbus"
 #endif
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.0.0"
+#define CMDLINE_PARSER_VERSION "1.0.1"
 #endif
 
 /** @brief Where the command line options are stored */
