@@ -8,8 +8,7 @@
 #include "cmdline.h"
 #include <signal.h>
 #include <regex.h>
-
-#define DEBUG_MSG(msg,...) if (debug_mode) fprintf(stderr, "DEBUG: " msg, ##__VA_ARGS__);
+#include "dbg.h"
 
 uint8_t tab_reg[8];
 int rc;
