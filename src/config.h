@@ -2,7 +2,7 @@
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Debug Mode */
-/* #undef DEBUG */
+#define DEBUG /**/
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
@@ -63,7 +63,7 @@
 #define HAVE__BOOL 1
 
 /* No-debug Mode */
-#define NDEBUG /**/
+/* #undef NDEBUG */
 
 /* Name of package */
 #define PACKAGE "powerbox_modbus"

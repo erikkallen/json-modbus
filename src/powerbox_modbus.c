@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <regex.h>
 
-#define DEBUG_MSG(msg,...) if (debug_mode) fprintf(stderr, msg, ##__VA_ARGS__);
+#define DEBUG_MSG(msg,...) if (debug_mode) fprintf(stderr, "DEBUG: " msg, ##__VA_ARGS__);
 
 uint8_t tab_reg[8];
 int rc;
@@ -32,9 +32,11 @@ enum mb_data_type {
   mb_float_array,
   mb_uint8,
   mb_uint16,
+  mb_uint32,
   mb_int8,
   mb_int16,
-  mb_coil  
+  mb_coil,
+  mb_coils
 };
 
 struct gengetopt_args_info args_info;
@@ -43,10 +45,13 @@ typedef struct reg_list {
 	char name[50];
 	float float_val;
     uint16_t * float_array;
+    bool coil_array[255];
+    uint8_t num_coils;
 	int32_t int32_val;
 	uint8_t uint8_val;
     int8_t int8_val;
     uint16_t uint16_val;
+    uint32_t uint32_val;
     int16_t int16_val;
 	enum mb_data_type type;
 	char unit[10];
@@ -87,80 +92,71 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
     char name[51];
     uint16_t reg;
     char value[51];
-    float conversion;
+    float conversion = 0;
     char rw;
     // --reg "type name reg conversion value"
-    sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
-    
-    DEBUG_MSG("Parsing string\n");
-    int reti, num_matches=0;
-    regex_t p;
-    regmatch_t *pm = malloc(sizeof(regmatch_t)*5);
-    memset(pm, 0,sizeof(regmatch_t)*5);
-    reti = regcomp(&p, "([a-zA-Z]+) ([a-zA-Z]+) ([0-9.]*) ?([0-9.]*)", REG_EXTENDED);
-    if (reti) {
-        DEBUG_MSG(stderr, "Could not compile regex\n");
-        exit(1);
-    }
-    reti = regexec(&p, def_str, 5, pm, 0);
-    for (int i=1;i<5;i++ ) {
-        char s[100];
-        memset(s,0,100);
-        strncpy(s,&def_str[(pm + i)->rm_so], (pm+i)->rm_eo - (pm+i)->rm_so);
-        DEBUG_MSG(" %s start=%lld end=%lld\n",s,(pm+i)->rm_so, (pm+i)->rm_eo);
-        if ((pm+i)->rm_so == (pm+i)->rm_eo) {
-            
-            num_matches = i -1;
+  
+#define STRLEN(s) ((sizeof(s)/sizeof(s[0]))-1)
+#define CHECK_STR(str,sstr) (strncmp(str,sstr,STRLEN(sstr)) == 0)
+	
+    if (CHECK_STR(def_str,"uint16")) {
+        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
+        ctx->reg_list[ctx->reg_index].type = mb_uint16;
+		ctx->reg_list[ctx->reg_index].uint16_val = (uint16_t)atoi(value);
+    } else if (CHECK_STR(def_str,"int16")) {
+        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
+        ctx->reg_list[ctx->reg_index].type = mb_int16;
+		ctx->reg_list[ctx->reg_index].int16_val = (int16_t)atoi(value);
+    } else if (CHECK_STR(def_str,"int8")) {
+        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
+        ctx->reg_list[ctx->reg_index].type = mb_int8;
+		ctx->reg_list[ctx->reg_index].int8_val = (int8_t)atoi(value);
+    } else if (CHECK_STR(def_str,"uint32")) {
+        sscanf(def_str, "%15s%50s%hu%20s",type,name,&reg,value);
+        ctx->reg_list[ctx->reg_index].type = mb_uint32;
+		ctx->reg_list[ctx->reg_index].uint32_val = (uint32_t)atoi(value);
+    } else if (CHECK_STR(def_str,"float")) {
+        sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
+        ctx->reg_list[ctx->reg_index].type = mb_float;
+		ctx->reg_list[ctx->reg_index].float_val = (int8_t)atof(value);
+    } else if (CHECK_STR(def_str,"float_cdab")) {
+        sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
+        ctx->reg_list[ctx->reg_index].type = mb_float_cdab;
+		ctx->reg_list[ctx->reg_index].float_val = (int8_t)atof(value);
+        //fprintf(stderr,"writing float not implemented");
+        //exit(1);
+    } else if (CHECK_STR(def_str,"float_array")) {
+        sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
+        ctx->reg_list[ctx->reg_index].type = mb_float_array;
+        //fprintf(stderr,"writing float not implemented");
+        //exit(1);
+    } else if (CHECK_STR(def_str,"coils")) {
+        sscanf(def_str, "%15s%50s%hu",type,name,&reg);
+        ctx->reg_list[ctx->reg_index].type = mb_coils;
+        /*char strc[strlen(def_str)];
+        strncpy(strc,&def_str[5],200);*/
+        char *tok = NULL;
+        tok = strtok(&def_str[5], " ");
+        int i;
+        DEBUG_MSG("str %s\n",def_str);
+        while (tok) {
+            DEBUG_MSG("Token: %s\n", tok);
+            ctx->reg_list[ctx->reg_index].coil_array[i++] = (bool)atoi(tok);
+            tok = strtok(NULL, " ");
         }
-        //last_match += pm.rm_so+1;
+        DEBUG_MSG("NUM coils = %d\n",i);
+        ctx->reg_list[ctx->reg_index].num_coils = i;
+        
+    } else if (CHECK_STR(def_str,"coil")) {
+        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
+        ctx->reg_list[ctx->reg_index].type = mb_coil;
+		ctx->reg_list[ctx->reg_index].uint8_val = (uint8_t)atoi(value);
     }
-    regfree(&p);
-    free(pm);
-    
-    DEBUG_MSG("Num matches: %d\n", num_matches);
     
     ctx->reg_list[ctx->reg_index].address = reg;
     strncpy(ctx->reg_list[ctx->reg_index].name,name,50);
     ctx->reg_list[ctx->reg_index].conversion = conversion;
     ctx->reg_list[ctx->reg_index].rw = rw;
-	
-    if (strncmp(type,"uint16",10) == 0) {
-        ctx->reg_list[ctx->reg_index].type = mb_uint16;
-		ctx->reg_list[ctx->reg_index].uint16_val = (uint16_t)atoi(value);
-    }
-
-    if (strncmp(type,"int16",10) == 0) {
-        ctx->reg_list[ctx->reg_index].type = mb_int16;
-		ctx->reg_list[ctx->reg_index].int16_val = (int16_t)atoi(value);
-    }
-
-    if (strncmp(type,"int8",10) == 0) {
-        ctx->reg_list[ctx->reg_index].type = mb_int8;
-		ctx->reg_list[ctx->reg_index].int8_val = (int8_t)atoi(value);
-    }
-
-    if (strncmp(type,"float",10) == 0) {
-        ctx->reg_list[ctx->reg_index].type = mb_float;
-        //fprintf(stderr,"writing float not implemented");
-        //exit(1);
-    }
-    
-    if (strncmp(type,"float_cdab",15) == 0) {
-        ctx->reg_list[ctx->reg_index].type = mb_float_cdab;
-        //fprintf(stderr,"writing float not implemented");
-        //exit(1);
-    }
-    
-    if (strncmp(type,"float_array",15) == 0) {
-        ctx->reg_list[ctx->reg_index].type = mb_float_array;
-        //fprintf(stderr,"writing float not implemented");
-        //exit(1);
-    }
-
-    if (strncmp(type,"coil",10) == 0) {
-        ctx->reg_list[ctx->reg_index].type = mb_coil;
-		ctx->reg_list[ctx->reg_index].uint8_val = (uint8_t)atoi(value);
-    }
 	
 	
     
@@ -181,6 +177,9 @@ void process_registers(struct mb_util_ctx * ctx) {
             switch(ctx->reg_list[i].type) {
                 case mb_uint16:
                     rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+                break;
+                case mb_uint32:
+                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, (uint16_t *)&ctx->reg_list[i].uint32_val);
                 break;
                 case mb_int16:
                     rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
@@ -214,21 +213,28 @@ void process_registers(struct mb_util_ctx * ctx) {
         }
     } else { // Write registers
     	for (int i=0;i<ctx->reg_index;i++) {
+			uint16_t tmp_float[2];
 	        DEBUG_MSG("Writing: reg: %hu\n",ctx->reg_list[i].address);
             switch(ctx->reg_list[i].type) {
                 case mb_uint16:
-                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+                    rc = modbus_write_register(ctx->modbus_ctx, ctx->reg_list[i].address, ctx->reg_list[i].uint16_val);
+                break;
+                case mb_uint32:
+                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2,(uint16_t*)&ctx->reg_list[i].uint32_val);
                 break;
                 case mb_int16:
-                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
+                    rc = modbus_write_register(ctx->modbus_ctx, ctx->reg_list[i].address, (uint16_t)ctx->reg_list[i].int16_val);
                 break;
                 case mb_int8:
-                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                    rc = modbus_write_register(ctx->modbus_ctx, ctx->reg_list[i].address, (uint16_t)ctx->reg_list[i].int8_val);
                 break;
                 case mb_uint8:
-                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                    rc = modbus_write_register(ctx->modbus_ctx, ctx->reg_list[i].address, (uint16_t)ctx->reg_list[i].int8_val);
                 break;
                 case mb_float:
+                    modbus_set_float(ctx->reg_list[i].float_val,tmp_float);
+                    rc = modbus_write_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp_float);
+                break;
                 case mb_float_cdab:
                 case mb_float_array:
                 DEBUG_MSG("writing float not implemented");
@@ -236,6 +242,9 @@ void process_registers(struct mb_util_ctx * ctx) {
                 break;
                 case mb_coil:
                     rc = modbus_write_bit(ctx->modbus_ctx, ctx->reg_list[i].address, ctx->reg_list[i].uint8_val);
+                break;
+                case mb_coils:
+                    rc = modbus_write_bits(ctx->modbus_ctx, ctx->reg_list[i].address, ctx->reg_list[i].num_coils,(uint8_t *)ctx->reg_list[i].coil_array);
                 break;
                 default:
                 break;
@@ -252,17 +261,20 @@ void print_registers(struct mb_util_ctx * ctx) {
         //printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
         //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
         switch(ctx->reg_list[i].type) {
+            case mb_uint32:
+                printf("\t\t\"%s\":%u", ctx->reg_list[i].name, ctx->reg_list[i].uint32_val);
+            break;
             case mb_uint16:
-                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val * ctx->reg_list[i].conversion);
+                printf("\t\t\"%s\":%hu", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val);
             break;
             case mb_int16:
-                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int16_val * ctx->reg_list[i].conversion);
+                printf("\t\t\"%s\":%hd", ctx->reg_list[i].name, ctx->reg_list[i].int16_val);
             break;
             case mb_int8:
-                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].int8_val * ctx->reg_list[i].conversion);
+                printf("\t\t\"%s\":%hhd", ctx->reg_list[i].name, ctx->reg_list[i].int8_val);
             break;
             case mb_uint8:
-                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val * ctx->reg_list[i].conversion);
+                printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val );
             break;
             case mb_float:
             case mb_float_cdab:
@@ -282,6 +294,16 @@ void print_registers(struct mb_util_ctx * ctx) {
             break;
             case mb_coil:
                 printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val);
+            break;
+            case mb_coils:
+                printf("\t\t\"%s\":[", ctx->reg_list[i].name);
+                for (int j=0;j<ctx->reg_list[i].num_coils;j++) {
+                    printf("%hhu",(uint8_t)ctx->reg_list[i].coil_array[j]);
+                    if (j != ctx->reg_list[i].num_coils - 1) {
+            			printf(",");
+            		}
+                }
+                printf("]");
             break;
             default:
             break;
@@ -356,7 +378,7 @@ int main(int argc, char **argv) {
 	modbus_set_debug(mb_instance.modbus_ctx,args_info.debug_flag);
     
 	
-	struct timeval rt,rt2;
+	struct timeval rt;
 	
 	/*rt2.tv_sec=1;
 	rt2.tv_usec=0;
