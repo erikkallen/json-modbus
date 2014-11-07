@@ -1,0 +1,63 @@
+/-g/
+.RS
+Registers of the modbus device can be passed as options or defined in a configuration file and read in using the -C commandline option
+
+The register string as the following format for reading:
+<reg_type> <reg_name> <reg_address>
+
+The register string as the following format for writing:
+<reg_type> <reg_name> <reg_address> [conversion] <reg_value>
+
+The conversion parameter only counts for float register types
+
+Register types can be one of the following:
+.IP \[bu] 2
+uint8
+.IP \[bu]
+uint16
+.IP \[bu]
+uint32
+.IP \[bu]
+int8
+.IP \[bu]
+int16
+.IP \[bu]
+int32
+.IP \[bu]
+float
+.IP \[bu]
+float_cdba
+.IP \[bu]
+float_array
+.RE
+.IP \[bu]
+coil
+.RE
+.IP \[bu]
+coils (write only!)
+.RE
+
+The coils type enables you to write multiple coils at once so it has a slightly differen syntax:
+
+coils <coils_name> <coil_1_val> <coil_2_val> <coil_n_val>
+
+
+[EXAMPLES]
+# Read coil on address 1 and give the response label coil_name
+
+json_modbus -g 'coil coil_name 1' -r -h example.com -p 1502
+
+outputs:
+.br
+{
+.br
+	"modbus": {
+.br
+		"coil_name": 0
+.br
+	}
+.br
+}
+
+# Writing a uint32 register
+json_modbus -g 'uint reg_name 10 1000000' -w -h example.com -p 1502

@@ -7,11 +7,11 @@ json_modbus_CFLAGS = $(MODBUS_CFLAGS) -DGIT_VERSION=\"$(GIT_VERSION)\"
 json_modbus_LDADD =  $(MODBUS_LIBS)
 
 cmdline.c: $(top_srcdir)/json_modbus.ggo
-	gengetopt -C < $(top_srcdir)/json_modbus.ggo
+	gengetopt --unamed-opts="HOSTNAME" -C < $(top_srcdir)/json_modbus.ggo
 	sed "s/\"GIT_VERSION\"/GIT_VERSION/" $@ > $@.tmp
 	mv $@.tmp $@
 
 man_MANS = json_modbus.1
 
-json_modbus.1: $(srcdir)/json_modbus.c
-	-$(HELP2MAN) --output=$@ --name='JSON Modbus' ./json_modbus
+json_modbus.1: $(srcdir)/json_modbus.c $(top_srcdir)/examples.h2m
+	-$(HELP2MAN) --output=$@ --name='JSON Modbus' --include=$(top_srcdir)/examples.h2m ./json_modbus

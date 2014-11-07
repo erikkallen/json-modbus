@@ -1,11 +1,12 @@
 package "json_modbus"
 version "1.0.1"
 purpose "This application reads a device using the modbus protocol and returns the result in json format."
+description ""
 versiontext "GIT_VERSION"
  
-args "<command line options>"	
+args ""	
 
-option "host" h "IP adress of modbus device." default="10.0.0.5" string
+#option "address" - "IP adress of modbus device." string required
 option "port" p "Port of modbus device." default="502" int
 option "interval" i "Time between measurements in seconds" default="0" int optional
 option "debug" d "Show protocol debug information" flag off

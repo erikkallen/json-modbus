@@ -346,6 +346,11 @@ int main(int argc, char **argv) {
      	/* call the config file parser */
     	if (cmdline_parser_config_file(args_info.conf_file_arg, &args_info, params) != 0) exit(1);
 	}
+    
+    if (args_info.inputs_num != 1) {
+        cmdline_parser_print_help();
+        exit(1);
+    }
     debug_mode = args_info.debug_flag;
     
     struct mb_util_ctx mb_instance;
@@ -367,8 +372,8 @@ int main(int argc, char **argv) {
         DEBUG_MSG("passed coil: %s\n", args_info.reg_arg[i]);
     }
 	
-	DEBUG_MSG("Connecting to: %s\n",args_info.host_arg);
-	mb_instance.modbus_ctx = modbus_new_tcp(args_info.host_arg, args_info.port_arg);
+	DEBUG_MSG("Connecting to: %s\n",args_info.inputs[0]);
+	mb_instance.modbus_ctx = modbus_new_tcp(args_info.inputs[0], args_info.port_arg);
 	if (mb_instance.modbus_ctx == NULL) {
 	    DEBUG_MSG("Unable to create the libmodbus context\n");
 	    return -1;
