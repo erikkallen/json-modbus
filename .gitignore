@@ -48,7 +48,3 @@ config.status
 src/json_modbus
 test/http_server_test
 test/rtu_server_test
-docs/Doxyfile
-docs/doxyfile.stamp
-docs/html
-docs/man
