@@ -76,6 +76,8 @@ fi
 
 PKG_CHECK_MODULES([MODBUS], [libmodbus])
 
+AC_PATH_PROG(HELP2MAN, help2man, echo No help2man )
+
 CFLAGS="$AM_CFLAGS"
 CXXFLAGS="$AM_CXXFLAGS"
 ##########################################################################
