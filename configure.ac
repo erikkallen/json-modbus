@@ -47,7 +47,15 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memmove memset])
 
 AC_CONFIG_SRCDIR([src])
-AC_CONFIG_FILES([Makefile src/Makefile test/Makefile json_modbus.ggo])
+AC_CHECK_PROGS([DOXYGEN], [doxygen])
+if test -z "$DOXYGEN";
+   then AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
+fi
+
+AM_CONDITIONAL([HAVE_DOXYGEN], 
+[test -n "$DOXYGEN"])AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([docs/Doxyfile])])
+
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile docs/Makefile json_modbus.ggo])
 AC_CONFIG_HEADERS([src/config.h])
 
 ##########################################################################
