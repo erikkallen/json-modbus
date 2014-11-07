@@ -46,5 +46,6 @@ config.status
 *.x86_64
 *.hex
 src/json_modbus
+src/json_modbus.1
 test/http_server_test
 test/rtu_server_test
