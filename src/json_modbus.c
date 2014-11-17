@@ -357,7 +357,7 @@ int main(int argc, char **argv) {
 	params->check_required = 1;
 	
 	if (args_info.conf_file_given) {
-		printf("Reading config\n");
+		DEBUG_MSG("Reading config\n");
      	/* call the config file parser */
     	if (cmdline_parser_config_file(args_info.conf_file_arg, &args_info, params) != 0) exit(1);
 	}
