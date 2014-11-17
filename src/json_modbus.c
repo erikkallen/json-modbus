@@ -126,11 +126,11 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
     } else if (CHECK_STR(def_str,"float")) {
         sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
         ctx->reg_list[ctx->reg_index].type = mb_float;
-		ctx->reg_list[ctx->reg_index].float_val = (int8_t)atof(value);
+		ctx->reg_list[ctx->reg_index].float_val = atof(value);
     } else if (CHECK_STR(def_str,"float_cdab")) {
         sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
         ctx->reg_list[ctx->reg_index].type = mb_float_cdab;
-		ctx->reg_list[ctx->reg_index].float_val = (int8_t)atof(value);
+		ctx->reg_list[ctx->reg_index].float_val = atof(value);
         //fprintf(stderr,"writing float not implemented");
         //exit(1);
     } else if (CHECK_STR(def_str,"float_array")) {
