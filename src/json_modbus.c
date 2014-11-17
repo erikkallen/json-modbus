@@ -34,6 +34,7 @@ enum mb_data_type {
   mb_uint32,
   mb_int8,
   mb_int16,
+  mb_int32,
   mb_coil,
   mb_coils
 };
@@ -46,12 +47,12 @@ typedef struct reg_list {
     uint16_t * float_array;
     bool coil_array[255];
     uint8_t num_coils;
+    int8_t int8_val;
+    int16_t int16_val;
 	int32_t int32_val;
 	uint8_t uint8_val;
-    int8_t int8_val;
     uint16_t uint16_val;
     uint32_t uint32_val;
-    int16_t int16_val;
 	enum mb_data_type type;
 	char unit[10];
 	double conversion;
@@ -97,19 +98,27 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
   
 #define STRLEN(s) ((sizeof(s)/sizeof(s[0]))-1)
 #define CHECK_STR(str,sstr) (strncmp(str,sstr,STRLEN(sstr)) == 0)
-	
-    if (CHECK_STR(def_str,"uint16")) {
+    
+    if (CHECK_STR(def_str,"int8")) {
         sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
-        ctx->reg_list[ctx->reg_index].type = mb_uint16;
-		ctx->reg_list[ctx->reg_index].uint16_val = (uint16_t)atoi(value);
+        ctx->reg_list[ctx->reg_index].type = mb_int8;
+    	ctx->reg_list[ctx->reg_index].int8_val = (int8_t)atoi(value);
     } else if (CHECK_STR(def_str,"int16")) {
         sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_int16;
 		ctx->reg_list[ctx->reg_index].int16_val = (int16_t)atoi(value);
-    } else if (CHECK_STR(def_str,"int8")) {
+    } else if (CHECK_STR(def_str,"int32")) {
+        sscanf(def_str, "%15s%50s%hu%20s",type,name,&reg,value);
+        ctx->reg_list[ctx->reg_index].type = mb_int32;
+		ctx->reg_list[ctx->reg_index].uint32_val = (int32_t)atoi(value);
+    } else if (CHECK_STR(def_str,"uint8")) {
         sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
-        ctx->reg_list[ctx->reg_index].type = mb_int8;
-		ctx->reg_list[ctx->reg_index].int8_val = (int8_t)atoi(value);
+        ctx->reg_list[ctx->reg_index].type = mb_uint8;
+		ctx->reg_list[ctx->reg_index].uint8_val = (uint8_t)atoi(value);
+    } else if (CHECK_STR(def_str,"uint16")) {
+        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
+        ctx->reg_list[ctx->reg_index].type = mb_uint16;
+		ctx->reg_list[ctx->reg_index].uint16_val = (uint16_t)atoi(value);
     } else if (CHECK_STR(def_str,"uint32")) {
         sscanf(def_str, "%15s%50s%hu%20s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_uint32;
@@ -174,20 +183,23 @@ void process_registers(struct mb_util_ctx * ctx) {
     	for (int i=0;i<ctx->reg_index;i++) {
 	        DEBUG_MSG("Reading: reg: %hu\n",ctx->reg_list[i].address);
             switch(ctx->reg_list[i].type) {
+                case mb_int8:
+                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                break;
+                case mb_int16:
+                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
+                break;
+                case mb_int32:
+                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, (uint16_t *)&ctx->reg_list[i].int32_val);
+                break;
+                case mb_uint8:
+                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                break;
                 case mb_uint16:
                     rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
                 break;
                 case mb_uint32:
                     rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, (uint16_t *)&ctx->reg_list[i].uint32_val);
-                break;
-                case mb_int16:
-                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
-                break;
-                case mb_int8:
-                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
-                break;
-                case mb_uint8:
-                    rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
                 break;
                 case mb_float:
     	            rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
@@ -260,20 +272,23 @@ void print_registers(struct mb_util_ctx * ctx) {
         //printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
         //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
         switch(ctx->reg_list[i].type) {
-            case mb_uint32:
-                printf("\t\t\"%s\":%u", ctx->reg_list[i].name, ctx->reg_list[i].uint32_val);
-            break;
-            case mb_uint16:
-                printf("\t\t\"%s\":%hu", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val);
+            case mb_int8:
+                printf("\t\t\"%s\":%hhd", ctx->reg_list[i].name, ctx->reg_list[i].int8_val);
             break;
             case mb_int16:
                 printf("\t\t\"%s\":%hd", ctx->reg_list[i].name, ctx->reg_list[i].int16_val);
             break;
-            case mb_int8:
-                printf("\t\t\"%s\":%hhd", ctx->reg_list[i].name, ctx->reg_list[i].int8_val);
+            case mb_int32:
+                printf("\t\t\"%s\":%d", ctx->reg_list[i].name, ctx->reg_list[i].int32_val);
             break;
             case mb_uint8:
                 printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val );
+            break;
+            case mb_uint16:
+                printf("\t\t\"%s\":%hu", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val);
+            break;
+            case mb_uint32:
+                printf("\t\t\"%s\":%u", ctx->reg_list[i].name, ctx->reg_list[i].uint32_val);
             break;
             case mb_float:
             case mb_float_cdab:
