@@ -6,9 +6,9 @@ The register string as the following format for reading:
 <reg_type> <reg_name> <reg_address>
 
 The register string as the following format for writing:
-<reg_type> <reg_name> <reg_address> [conversion] <reg_value>
+<reg_type> <reg_name> <reg_address> <reg_value> [conversion]
 
-The conversion parameter only counts for float register types
+The conversion parameter is optional
 
 Register types can be one of the following:
 .IP \[bu] 2
