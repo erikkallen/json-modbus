@@ -9,64 +9,7 @@
 #include <signal.h>
 #include <regex.h>
 #include "dbg.h"
-
-uint8_t tab_reg[8];
-int rc;
-int errno;
-float modbus_get_float_cdab(const uint16_t *src);
-bool running = true;
-bool exit_now = false;
-bool debug_mode = false;
-
-#define MB_TYPE_FLOAT  2 
-#define MB_TYPE_WORD  1
-#define MB_TYPE_SWORD  3
-#define MB_TYPE_LONG  4
-#define MB_TYPE_COIL  5
-#define MB_TYPE_CHAR  5
-
-enum mb_data_type {
-  mb_float,
-  mb_float_cdab,
-  mb_float_array,
-  mb_uint8,
-  mb_uint16,
-  mb_uint32,
-  mb_int8,
-  mb_int16,
-  mb_int32,
-  mb_coil,
-  mb_coils
-};
-
-struct gengetopt_args_info args_info;
-
-typedef struct reg_list {
-	char name[50];
-	float float_val;
-    uint16_t * float_array;
-    bool coil_array[255];
-    uint8_t num_coils;
-    int8_t int8_val;
-    int16_t int16_val;
-	int32_t int32_val;
-	uint8_t uint8_val;
-    uint16_t uint16_val;
-    uint32_t uint32_val;
-	enum mb_data_type type;
-	char unit[10];
-	double conversion;
-	uint16_t address;
-    char rw;
-} reg_list_t;
-
-struct mb_util_ctx {
-    reg_list_t * reg_list;
-    uint16_t reg_index;
-    modbus_t *modbus_ctx;
-	char name[51];
-	char rw;
-};
+#include "json_modbus.h"
 
 //#define address_list_size (int)(sizeof(address_list)/sizeof(address_list[0]))
 
@@ -92,57 +35,57 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
     char name[51];
     uint16_t reg;
     char value[51];
-    float conversion = 0;
-    char rw;
-    // --reg "type name reg conversion value"
+    float conversion = 1;
+    int last_pos = 0;
+    ctx->reg_list[ctx->reg_index].convert = false;
+    // --reg "type name reg [value] conversion"
   
 #define STRLEN(s) ((sizeof(s)/sizeof(s[0]))-1)
 #define CHECK_STR(str,sstr) (strncmp(str,sstr,STRLEN(sstr)) == 0)
     
+    if (CHECK_STR(def_str,"int") || CHECK_STR(def_str,"uint") || CHECK_STR(def_str,"float") || CHECK_STR(def_str,"float_cdab")) {
+        if (ctx->rw == 'r') {
+            sscanf(def_str, "%15s%50s%hu%n",type,name,&reg,&last_pos);
+            DEBUG_MSG("Lst pos: %d size: %lu\n",last_pos, strlen(def_str));
+        } else {
+            sscanf(def_str, "%15s%50s%hu%20s%n",type,name,&reg,value,&last_pos);
+        }
+        
+        if (last_pos != strlen(def_str)) {
+            sscanf(&def_str[last_pos], "%f",&conversion);
+            ctx->reg_list[ctx->reg_index].convert = true;
+        }
+    }
+    
     if (CHECK_STR(def_str,"int8")) {
-        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_int8;
     	ctx->reg_list[ctx->reg_index].int8_val = (int8_t)atoi(value);
     } else if (CHECK_STR(def_str,"int16")) {
-        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_int16;
 		ctx->reg_list[ctx->reg_index].int16_val = (int16_t)atoi(value);
     } else if (CHECK_STR(def_str,"int32")) {
-        sscanf(def_str, "%15s%50s%hu%20s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_int32;
 		ctx->reg_list[ctx->reg_index].uint32_val = (int32_t)atoi(value);
     } else if (CHECK_STR(def_str,"uint8")) {
-        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_uint8;
 		ctx->reg_list[ctx->reg_index].uint8_val = (uint8_t)atoi(value);
     } else if (CHECK_STR(def_str,"uint16")) {
-        sscanf(def_str, "%15s%50s%hu%10s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_uint16;
 		ctx->reg_list[ctx->reg_index].uint16_val = (uint16_t)atoi(value);
     } else if (CHECK_STR(def_str,"uint32")) {
-        sscanf(def_str, "%15s%50s%hu%20s",type,name,&reg,value);
         ctx->reg_list[ctx->reg_index].type = mb_uint32;
 		ctx->reg_list[ctx->reg_index].uint32_val = (uint32_t)atoi(value);
     } else if (CHECK_STR(def_str,"float")) {
-        sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
         ctx->reg_list[ctx->reg_index].type = mb_float;
 		ctx->reg_list[ctx->reg_index].float_val = atof(value);
     } else if (CHECK_STR(def_str,"float_cdab")) {
-        sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
         ctx->reg_list[ctx->reg_index].type = mb_float_cdab;
 		ctx->reg_list[ctx->reg_index].float_val = atof(value);
-        //fprintf(stderr,"writing float not implemented");
-        //exit(1);
     } else if (CHECK_STR(def_str,"float_array")) {
-        sscanf(def_str, "%15s%50s%hu %f%10s",type,name,&reg,&conversion,value);
         ctx->reg_list[ctx->reg_index].type = mb_float_array;
-        //fprintf(stderr,"writing float not implemented");
-        //exit(1);
     } else if (CHECK_STR(def_str,"coils")) {
         sscanf(def_str, "%15s%50s%hu",type,name,&reg);
         ctx->reg_list[ctx->reg_index].type = mb_coils;
-        /*char strc[strlen(def_str)];
-        strncpy(strc,&def_str[5],200);*/
         char *tok = NULL;
         tok = strtok(&def_str[5], " ");
         int i;
@@ -164,12 +107,9 @@ void parse_def_string(char * def_str,struct mb_util_ctx * ctx) {
     ctx->reg_list[ctx->reg_index].address = reg;
     strncpy(ctx->reg_list[ctx->reg_index].name,name,50);
     ctx->reg_list[ctx->reg_index].conversion = conversion;
-    ctx->reg_list[ctx->reg_index].rw = rw;
-	
-	
     
     ctx->reg_index++;
-    DEBUG_MSG("Type: %s\nName: %s\nReg: %u\nValue: %s\nConversion: %f\nR/W: %c\n",type,name,reg,value,conversion,rw);
+    DEBUG_MSG("Type: %s\nName: %s\nReg: %u\nValue: %s\nConversion: %f\n",type,name,reg,value,conversion);
     
 }
 
@@ -273,26 +213,33 @@ void print_registers(struct mb_util_ctx * ctx) {
         //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
         switch(ctx->reg_list[i].type) {
             case mb_int8:
+                if (ctx->reg_list[i].convert) ctx->reg_list[i].int8_val *= ctx->reg_list[i].conversion;
                 printf("\t\t\"%s\":%hhd", ctx->reg_list[i].name, ctx->reg_list[i].int8_val);
             break;
             case mb_int16:
+                if (ctx->reg_list[i].convert) ctx->reg_list[i].int16_val *= ctx->reg_list[i].conversion;
                 printf("\t\t\"%s\":%hd", ctx->reg_list[i].name, ctx->reg_list[i].int16_val);
             break;
             case mb_int32:
+                if (ctx->reg_list[i].convert) ctx->reg_list[i].int32_val *= ctx->reg_list[i].conversion;
                 printf("\t\t\"%s\":%d", ctx->reg_list[i].name, ctx->reg_list[i].int32_val);
             break;
             case mb_uint8:
+                if (ctx->reg_list[i].convert) ctx->reg_list[i].uint8_val *= ctx->reg_list[i].conversion;
                 printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val );
             break;
             case mb_uint16:
+                if (ctx->reg_list[i].convert) ctx->reg_list[i].uint16_val *= ctx->reg_list[i].conversion;
                 printf("\t\t\"%s\":%hu", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val);
             break;
             case mb_uint32:
+                if (ctx->reg_list[i].convert) ctx->reg_list[i].uint32_val *= ctx->reg_list[i].conversion;
                 printf("\t\t\"%s\":%u", ctx->reg_list[i].name, ctx->reg_list[i].uint32_val);
             break;
             case mb_float:
             case mb_float_cdab:
-                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val * ctx->reg_list[i].conversion);
+                if (ctx->reg_list[i].convert) ctx->reg_list[i].float_val *= ctx->reg_list[i].conversion;
+                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val);
             break;
             case mb_float_array:
                 printf("\t\t\"%s\":[", ctx->reg_list[i].name);
