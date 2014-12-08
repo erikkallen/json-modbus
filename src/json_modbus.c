@@ -211,63 +211,67 @@ void print_registers(struct mb_util_ctx * ctx) {
     for (int i=0;i<ctx->reg_index;i++) {
         //printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
         //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
-        switch(ctx->reg_list[i].type) {
-            case mb_int8:
-                if (ctx->reg_list[i].convert) ctx->reg_list[i].int8_val *= ctx->reg_list[i].conversion;
-                printf("\t\t\"%s\":%hhd", ctx->reg_list[i].name, ctx->reg_list[i].int8_val);
-            break;
-            case mb_int16:
-                if (ctx->reg_list[i].convert) ctx->reg_list[i].int16_val *= ctx->reg_list[i].conversion;
-                printf("\t\t\"%s\":%hd", ctx->reg_list[i].name, ctx->reg_list[i].int16_val);
-            break;
-            case mb_int32:
-                if (ctx->reg_list[i].convert) ctx->reg_list[i].int32_val *= ctx->reg_list[i].conversion;
-                printf("\t\t\"%s\":%d", ctx->reg_list[i].name, ctx->reg_list[i].int32_val);
-            break;
-            case mb_uint8:
-                if (ctx->reg_list[i].convert) ctx->reg_list[i].uint8_val *= ctx->reg_list[i].conversion;
-                printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val );
-            break;
-            case mb_uint16:
-                if (ctx->reg_list[i].convert) ctx->reg_list[i].uint16_val *= ctx->reg_list[i].conversion;
-                printf("\t\t\"%s\":%hu", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val);
-            break;
-            case mb_uint32:
-                if (ctx->reg_list[i].convert) ctx->reg_list[i].uint32_val *= ctx->reg_list[i].conversion;
-                printf("\t\t\"%s\":%u", ctx->reg_list[i].name, ctx->reg_list[i].uint32_val);
-            break;
-            case mb_float:
-            case mb_float_cdab:
-                if (ctx->reg_list[i].convert) ctx->reg_list[i].float_val *= ctx->reg_list[i].conversion;
-                printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val);
-            break;
-            case mb_float_array:
-                printf("\t\t\"%s\":[", ctx->reg_list[i].name);
-                for (int j=0;j<ctx->reg_list[i].conversion;j++) {
-                    printf("%f",modbus_get_float(ctx->reg_list[i].float_array+(j*2)));
-                    if (j != ctx->reg_list[i].conversion - 1) {
-            			printf(",");
-            		}
-                }
-                printf("]");
-                // Cleanup memory
-                free(ctx->reg_list[i].float_array);
-            break;
-            case mb_coil:
-                printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val);
-            break;
-            case mb_coils:
-                printf("\t\t\"%s\":[", ctx->reg_list[i].name);
-                for (int j=0;j<ctx->reg_list[i].num_coils;j++) {
-                    printf("%hhu",(uint8_t)ctx->reg_list[i].coil_array[j]);
-                    if (j != ctx->reg_list[i].num_coils - 1) {
-            			printf(",");
-            		}
-                }
-                printf("]");
-            break;
-            default:
-            break;
+        if (ctx->reg_list[i].convert && ctx->reg_list[i].type != mb_float_array) {
+            ctx->reg_list[i].float_val *= ctx->reg_list[i].conversion;
+            printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val);
+        } else {
+            switch(ctx->reg_list[i].type) {
+                case mb_int8:
+                    printf("\t\t\"%s\":%hhd", ctx->reg_list[i].name, ctx->reg_list[i].int8_val);
+                break;
+                case mb_int16:
+                    //if (ctx->reg_list[i].convert) ctx->reg_list[i].int16_val *= ctx->reg_list[i].conversion;
+                    printf("\t\t\"%s\":%hd", ctx->reg_list[i].name, ctx->reg_list[i].int16_val);
+                break;
+                case mb_int32:
+                    //if (ctx->reg_list[i].convert) ctx->reg_list[i].int32_val *= ctx->reg_list[i].conversion;
+                    printf("\t\t\"%s\":%d", ctx->reg_list[i].name, ctx->reg_list[i].int32_val);
+                break;
+                case mb_uint8:
+                    //if (ctx->reg_list[i].convert) ctx->reg_list[i].uint8_val *= ctx->reg_list[i].conversion;
+                    printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val );
+                break;
+                case mb_uint16:
+                    //if (ctx->reg_list[i].convert) ctx->reg_list[i].uint16_val *= ctx->reg_list[i].conversion;
+                    printf("\t\t\"%s\":%hu", ctx->reg_list[i].name, ctx->reg_list[i].uint16_val);
+                break;
+                case mb_uint32:
+                    //if (ctx->reg_list[i].convert) ctx->reg_list[i].uint32_val *= ctx->reg_list[i].conversion;
+                    printf("\t\t\"%s\":%u", ctx->reg_list[i].name, ctx->reg_list[i].uint32_val);
+                break;
+                case mb_float:
+                case mb_float_cdab:
+                    //if (ctx->reg_list[i].convert) ctx->reg_list[i].float_val *= ctx->reg_list[i].conversion;
+                    printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val);
+                break;
+                case mb_float_array:
+                    printf("\t\t\"%s\":[", ctx->reg_list[i].name);
+                    for (int j=0;j<ctx->reg_list[i].conversion;j++) {
+                        printf("%f",modbus_get_float(ctx->reg_list[i].float_array+(j*2)));
+                        if (j != ctx->reg_list[i].conversion - 1) {
+                			printf(",");
+                		}
+                    }
+                    printf("]");
+                    // Cleanup memory
+                    free(ctx->reg_list[i].float_array);
+                break;
+                case mb_coil:
+                    printf("\t\t\"%s\":%hhu", ctx->reg_list[i].name, ctx->reg_list[i].uint8_val);
+                break;
+                case mb_coils:
+                    printf("\t\t\"%s\":[", ctx->reg_list[i].name);
+                    for (int j=0;j<ctx->reg_list[i].num_coils;j++) {
+                        printf("%hhu",(uint8_t)ctx->reg_list[i].coil_array[j]);
+                        if (j != ctx->reg_list[i].num_coils - 1) {
+                			printf(",");
+                		}
+                    }
+                    printf("]");
+                break;
+                default:
+                break;
+            }
         }
         
 		// Last item in list
