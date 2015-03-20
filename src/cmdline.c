@@ -44,6 +44,9 @@ const char *gengetopt_args_info_help[] = {
   "  -C, --conf-file=STRING  Configuration file",
   "  -g, --reg=STRING        Define a register to read or write",
   "  -t, --timeout=INT       Set the response timeout  (default=`1')",
+  "  -s, --serial            Use serial rtu  (default=off)",
+  "  -b, --baud=INT          Serial baudrate  (default=`115200')",
+  "      --delay=INT         Delay before starting to send  (default=`0')",
   "\n Mode: read",
   "  -r, --read              Read registers  (default=on)",
   "\n Mode: write",
@@ -109,6 +112,9 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->conf_file_given = 0 ;
   args_info->reg_given = 0 ;
   args_info->timeout_given = 0 ;
+  args_info->serial_given = 0 ;
+  args_info->baud_given = 0 ;
+  args_info->delay_given = 0 ;
   args_info->read_given = 0 ;
   args_info->write_given = 0 ;
   args_info->read_mode_counter = 0 ;
@@ -133,6 +139,11 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->reg_orig = NULL;
   args_info->timeout_arg = 1;
   args_info->timeout_orig = NULL;
+  args_info->serial_flag = 0;
+  args_info->baud_arg = 115200;
+  args_info->baud_orig = NULL;
+  args_info->delay_arg = 0;
+  args_info->delay_orig = NULL;
   args_info->read_flag = 1;
   args_info->write_flag = 0;
   
@@ -155,8 +166,11 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->reg_min = 0;
   args_info->reg_max = 0;
   args_info->timeout_help = gengetopt_args_info_help[9] ;
-  args_info->read_help = gengetopt_args_info_help[11] ;
-  args_info->write_help = gengetopt_args_info_help[13] ;
+  args_info->serial_help = gengetopt_args_info_help[10] ;
+  args_info->baud_help = gengetopt_args_info_help[11] ;
+  args_info->delay_help = gengetopt_args_info_help[12] ;
+  args_info->read_help = gengetopt_args_info_help[14] ;
+  args_info->write_help = gengetopt_args_info_help[16] ;
   
 }
 
@@ -296,6 +310,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->conf_file_orig));
   free_multiple_string_field (args_info->reg_given, &(args_info->reg_arg), &(args_info->reg_orig));
   free_string_field (&(args_info->timeout_orig));
+  free_string_field (&(args_info->baud_orig));
+  free_string_field (&(args_info->delay_orig));
   
   
   for (i = 0; i < args_info->inputs_num; ++i)
@@ -358,6 +374,12 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
   write_multiple_into_file(outfile, args_info->reg_given, "reg", args_info->reg_orig, 0);
   if (args_info->timeout_given)
     write_into_file(outfile, "timeout", args_info->timeout_orig, 0);
+  if (args_info->serial_given)
+    write_into_file(outfile, "serial", 0, 0 );
+  if (args_info->baud_given)
+    write_into_file(outfile, "baud", args_info->baud_orig, 0);
+  if (args_info->delay_given)
+    write_into_file(outfile, "delay", args_info->delay_orig, 0);
   if (args_info->read_given)
     write_into_file(outfile, "read", 0, 0 );
   if (args_info->write_given)
@@ -631,6 +653,18 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   if (! args_info->timeout_given)
     {
       fprintf (stderr, "%s: '--timeout' ('-t') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error_occurred = 1;
+    }
+  
+  if (! args_info->baud_given)
+    {
+      fprintf (stderr, "%s: '--baud' ('-b') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error_occurred = 1;
+    }
+  
+  if (! args_info->delay_given)
+    {
+      fprintf (stderr, "%s: '--delay' option required%s\n", prog_name, (additional_error ? additional_error : ""));
       error_occurred = 1;
     }
   
@@ -959,12 +993,15 @@ cmdline_parser_internal (
         { "conf-file",	1, NULL, 'C' },
         { "reg",	1, NULL, 'g' },
         { "timeout",	1, NULL, 't' },
+        { "serial",	0, NULL, 's' },
+        { "baud",	1, NULL, 'b' },
+        { "delay",	1, NULL, 0 },
         { "read",	0, NULL, 'r' },
         { "write",	0, NULL, 'w' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVp:i:dn:C:g:t:rw", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVp:i:dn:C:g:t:sb:rw", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1059,6 +1096,28 @@ cmdline_parser_internal (
             goto failure;
         
           break;
+        case 's':	/* Use serial rtu.  */
+        
+        
+          if (update_arg((void *)&(args_info->serial_flag), 0, &(args_info->serial_given),
+              &(local_args_info.serial_given), optarg, 0, 0, ARG_FLAG,
+              check_ambiguity, override, 1, 0, "serial", 's',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'b':	/* Serial baudrate.  */
+        
+        
+          if (update_arg( (void *)&(args_info->baud_arg), 
+               &(args_info->baud_orig), &(args_info->baud_given),
+              &(local_args_info.baud_given), optarg, 0, "115200", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "baud", 'b',
+              additional_error))
+            goto failure;
+        
+          break;
         case 'r':	/* Read registers.  */
           args_info->read_mode_counter += 1;
         
@@ -1091,6 +1150,20 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->include_date_flag), 0, &(args_info->include_date_given),
                 &(local_args_info.include_date_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "include-date", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Delay before starting to send.  */
+          else if (strcmp (long_options[option_index].name, "delay") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->delay_arg), 
+                 &(args_info->delay_orig), &(args_info->delay_given),
+                &(local_args_info.delay_given), optarg, 0, "0", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "delay", '-',
                 additional_error))
               goto failure;
           

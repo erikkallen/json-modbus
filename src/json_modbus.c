@@ -338,8 +338,13 @@ int main(int argc, char **argv) {
         DEBUG_MSG("passed coil: %s\n", args_info.reg_arg[i]);
     }
 	
-	DEBUG_MSG("Connecting to: %s\n",args_info.inputs[0]);
-	mb_instance.modbus_ctx = modbus_new_tcp(args_info.inputs[0], args_info.port_arg);
+    if(args_info.serial_given) {
+        mb_instance.modbus_ctx = modbus_new_rtu(args_info.inputs[0],args_info.baud_arg,'N',8,2);
+    } else {
+        DEBUG_MSG("Connecting to: %s\n",args_info.inputs[0]);
+        mb_instance.modbus_ctx = modbus_new_tcp(args_info.inputs[0], args_info.port_arg);
+    }
+	
 	if (mb_instance.modbus_ctx == NULL) {
 	    DEBUG_MSG("Unable to create the libmodbus context\n");
 	    return -1;
@@ -360,12 +365,14 @@ int main(int argc, char **argv) {
 	rt.tv_sec=args_info.timeout_arg;
 	rt.tv_usec=0;
     modbus_set_response_timeout(mb_instance.modbus_ctx, &rt);
+    modbus_set_byte_timeout(mb_instance.modbus_ctx, &rt);
     
 	if (modbus_connect(mb_instance.modbus_ctx) == -1) {
 	    DEBUG_MSG("Connection failed: %s\n", modbus_strerror(errno));
 	    modbus_free(mb_instance.modbus_ctx);
 	    return -1;
 	}
+    sleep(args_info.delay_arg);
     
     process_registers(&mb_instance);
     

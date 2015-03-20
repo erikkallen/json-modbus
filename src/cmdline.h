@@ -63,6 +63,14 @@ struct gengetopt_args_info
   int timeout_arg;	/**< @brief Set the response timeout (default='1').  */
   char * timeout_orig;	/**< @brief Set the response timeout original value given at command line.  */
   const char *timeout_help; /**< @brief Set the response timeout help description.  */
+  int serial_flag;	/**< @brief Use serial rtu (default=off).  */
+  const char *serial_help; /**< @brief Use serial rtu help description.  */
+  int baud_arg;	/**< @brief Serial baudrate (default='115200').  */
+  char * baud_orig;	/**< @brief Serial baudrate original value given at command line.  */
+  const char *baud_help; /**< @brief Serial baudrate help description.  */
+  int delay_arg;	/**< @brief Delay before starting to send (default='0').  */
+  char * delay_orig;	/**< @brief Delay before starting to send original value given at command line.  */
+  const char *delay_help; /**< @brief Delay before starting to send help description.  */
   int read_flag;	/**< @brief Read registers (default=on).  */
   const char *read_help; /**< @brief Read registers help description.  */
   int write_flag;	/**< @brief Write registers (default=off).  */
@@ -78,6 +86,9 @@ struct gengetopt_args_info
   unsigned int conf_file_given ;	/**< @brief Whether conf-file was given.  */
   unsigned int reg_given ;	/**< @brief Whether reg was given.  */
   unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
+  unsigned int serial_given ;	/**< @brief Whether serial was given.  */
+  unsigned int baud_given ;	/**< @brief Whether baud was given.  */
+  unsigned int delay_given ;	/**< @brief Whether delay was given.  */
   unsigned int read_given ;	/**< @brief Whether read was given.  */
   unsigned int write_given ;	/**< @brief Whether write was given.  */
 

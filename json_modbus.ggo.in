@@ -6,7 +6,7 @@ versiontext "GIT_VERSION"
  
 args ""	
 
-#option "address" - "IP adress of modbus device." string required
+#option "address" - "IP adress of modbus device or Serial port if serial is chosen" string required
 option "port" p "Port of modbus device." default="502" int
 option "interval" i "Time between measurements in seconds" default="0" int optional
 option "debug" d "Show protocol debug information" flag off
@@ -15,6 +15,9 @@ option "include-date" - "add a date to the output" flag off
 option "conf-file" C "Configuration file" string optional
 option "reg" g "Define a register to read or write" string optional multiple
 option "timeout" t "Set the response timeout" default="1" int
+option "serial" s "Use serial rtu" flag off
+option "baud" b "Serial baudrate" default="115200" int
+option "delay" - "Delay before starting to send" default="0" int
 
 defmode "read"
 defmode "write"
