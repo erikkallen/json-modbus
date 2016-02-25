@@ -3,8 +3,8 @@ version "1.0.1"
 purpose "This application reads a device using the modbus protocol and returns the result in json format."
 description ""
 versiontext "GIT_VERSION"
- 
-args ""	
+
+args ""
 
 #option "address" - "IP adress of modbus device or Serial port if serial is chosen" string required
 option "port" p "Port of modbus device." default="502" int
@@ -17,6 +17,7 @@ option "reg" g "Define a register to read or write" string optional multiple
 option "timeout" t "Set the response timeout" default="1" int
 option "serial" s "Use serial rtu" flag off
 option "baud" b "Serial baudrate" default="115200" int
+option "input" I "Read from input registers instead of holding" flag off
 option "delay" - "Delay before starting to send" default="0" int
 
 defmode "read"

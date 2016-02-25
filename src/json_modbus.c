@@ -124,35 +124,35 @@ void process_registers(struct mb_util_ctx * ctx) {
                         DEBUG_MSG("Reading: reg: %hu\n",ctx->reg_list[i].address);
                         switch(ctx->reg_list[i].type) {
                         case mb_int8:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
                                 break;
                         case mb_int16:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int16_val);
                                 break;
                         case mb_int32:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, (uint16_t *)&ctx->reg_list[i].int32_val);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 2, (uint16_t *)&ctx->reg_list[i].int32_val);
                                 break;
                         case mb_uint8:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 1, (uint16_t *)&ctx->reg_list[i].int8_val);
                                 break;
                         case mb_uint16:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 1, &ctx->reg_list[i].uint16_val);
                                 break;
                         case mb_uint32:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, (uint16_t *)&ctx->reg_list[i].uint32_val);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 2, (uint16_t *)&ctx->reg_list[i].uint32_val);
                                 break;
                         case mb_float:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
                                 ctx->reg_list[i].float_val = modbus_get_float(tmp);
                                 break;
                         case mb_float_cdab:
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 2, tmp);
                                 ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
                                 break;
                         case mb_float_array:
                                 // Allocate room for float array
                                 ctx->reg_list[i].float_array = (uint16_t *)malloc(sizeof(uint16_t) * ctx->reg_list[i].conversion);
-                                rc = modbus_read_registers(ctx->modbus_ctx, ctx->reg_list[i].address, 2 * ctx->reg_list[i].conversion, ctx->reg_list[i].float_array);
+                                rc = ctx->read_regs(ctx->modbus_ctx, ctx->reg_list[i].address, 2 * ctx->reg_list[i].conversion, ctx->reg_list[i].float_array);
                                 //ctx->reg_list[i].float_val = modbus_get_float_cdab(tmp);
                                 break;
                         case mb_coil:
@@ -358,6 +358,11 @@ int main(int argc, char **argv) {
         modbus_set_slave(mb_instance.modbus_ctx, 1);
         modbus_set_debug(mb_instance.modbus_ctx,args_info.debug_flag);
 
+        if (args_info.input_given) {
+          mb_instance.read_regs = modbus_read_input_registers;
+        } else {
+          mb_instance.read_regs = modbus_read_registers;
+        }
 
         struct timeval rt;
 

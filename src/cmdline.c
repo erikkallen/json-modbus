@@ -46,6 +46,7 @@ const char *gengetopt_args_info_help[] = {
   "  -t, --timeout=INT       Set the response timeout  (default=`1')",
   "  -s, --serial            Use serial rtu  (default=off)",
   "  -b, --baud=INT          Serial baudrate  (default=`115200')",
+  "  -I, --input             Read from input registers instead of holding\n                            (default=off)",
   "      --delay=INT         Delay before starting to send  (default=`0')",
   "\n Mode: read",
   "  -r, --read              Read registers  (default=on)",
@@ -114,6 +115,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->timeout_given = 0 ;
   args_info->serial_given = 0 ;
   args_info->baud_given = 0 ;
+  args_info->input_given = 0 ;
   args_info->delay_given = 0 ;
   args_info->read_given = 0 ;
   args_info->write_given = 0 ;
@@ -142,6 +144,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->serial_flag = 0;
   args_info->baud_arg = 115200;
   args_info->baud_orig = NULL;
+  args_info->input_flag = 0;
   args_info->delay_arg = 0;
   args_info->delay_orig = NULL;
   args_info->read_flag = 1;
@@ -168,9 +171,10 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->timeout_help = gengetopt_args_info_help[9] ;
   args_info->serial_help = gengetopt_args_info_help[10] ;
   args_info->baud_help = gengetopt_args_info_help[11] ;
-  args_info->delay_help = gengetopt_args_info_help[12] ;
-  args_info->read_help = gengetopt_args_info_help[14] ;
-  args_info->write_help = gengetopt_args_info_help[16] ;
+  args_info->input_help = gengetopt_args_info_help[12] ;
+  args_info->delay_help = gengetopt_args_info_help[13] ;
+  args_info->read_help = gengetopt_args_info_help[15] ;
+  args_info->write_help = gengetopt_args_info_help[17] ;
   
 }
 
@@ -378,6 +382,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "serial", 0, 0 );
   if (args_info->baud_given)
     write_into_file(outfile, "baud", args_info->baud_orig, 0);
+  if (args_info->input_given)
+    write_into_file(outfile, "input", 0, 0 );
   if (args_info->delay_given)
     write_into_file(outfile, "delay", args_info->delay_orig, 0);
   if (args_info->read_given)
@@ -995,13 +1001,14 @@ cmdline_parser_internal (
         { "timeout",	1, NULL, 't' },
         { "serial",	0, NULL, 's' },
         { "baud",	1, NULL, 'b' },
+        { "input",	0, NULL, 'I' },
         { "delay",	1, NULL, 0 },
         { "read",	0, NULL, 'r' },
         { "write",	0, NULL, 'w' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVp:i:dn:C:g:t:sb:rw", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVp:i:dn:C:g:t:sb:Irw", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1114,6 +1121,16 @@ cmdline_parser_internal (
               &(local_args_info.baud_given), optarg, 0, "115200", ARG_INT,
               check_ambiguity, override, 0, 0,
               "baud", 'b',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'I':	/* Read from input registers instead of holding.  */
+        
+        
+          if (update_arg((void *)&(args_info->input_flag), 0, &(args_info->input_given),
+              &(local_args_info.input_given), optarg, 0, 0, ARG_FLAG,
+              check_ambiguity, override, 1, 0, "input", 'I',
               additional_error))
             goto failure;
         

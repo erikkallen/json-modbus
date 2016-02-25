@@ -8,7 +8,7 @@ bool running = true;
 bool exit_now = false;
 bool debug_mode = false;
 
-#define MB_TYPE_FLOAT  2 
+#define MB_TYPE_FLOAT  2
 #define MB_TYPE_WORD  1
 #define MB_TYPE_SWORD  3
 #define MB_TYPE_LONG  4
@@ -57,6 +57,8 @@ struct mb_util_ctx {
     modbus_t *modbus_ctx;
 	char name[51];
 	char rw;
+  int (*read_regs)(modbus_t *, int addr, int nb, uint16_t *dest);
+
 };
 
 #endif
