@@ -121,6 +121,7 @@ void process_registers(struct mb_util_ctx * ctx) {
         // Read registers
         if (ctx->rw == 'r') {
                 for (int i=0; i<ctx->reg_index; i++) {
+                    usleep(5000);
                         DEBUG_MSG("Reading: reg: %hu\n",ctx->reg_list[i].address);
                         switch(ctx->reg_list[i].type) {
                         case mb_int8:
@@ -164,6 +165,7 @@ void process_registers(struct mb_util_ctx * ctx) {
                 }
         } else { // Write registers
                 for (int i=0; i<ctx->reg_index; i++) {
+                    usleep(5000);
                         uint16_t tmp_float[2];
                         DEBUG_MSG("Writing: reg: %hu\n",ctx->reg_list[i].address);
                         switch(ctx->reg_list[i].type) {
