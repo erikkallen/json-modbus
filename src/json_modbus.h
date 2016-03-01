@@ -57,6 +57,7 @@ struct mb_util_ctx {
     modbus_t *modbus_ctx;
 	char name[51];
 	char rw;
+  bool swap;
   int (*read_regs)(modbus_t *, int addr, int nb, uint16_t *dest);
 
 };

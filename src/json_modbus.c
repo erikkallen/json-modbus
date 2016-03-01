@@ -231,6 +231,9 @@ void print_registers(struct mb_util_ctx * ctx) {
                                 break;
                         case mb_int32:
                                 //if (ctx->reg_list[i].convert) ctx->reg_list[i].int32_val *= ctx->reg_list[i].conversion;
+                                if(ctx->swap){
+                                ctx->reg_list[i].int32_val=(((ctx->reg_list[i].int32_val & 0x0000FFFF)<<16)|((ctx->reg_list[i].int32_val & 0xFFFF0000))>>16);
+                                }
                                 printf("\t\t\"%s\":%d", ctx->reg_list[i].name, ctx->reg_list[i].int32_val);
                                 break;
                         case mb_uint8:
@@ -243,6 +246,9 @@ void print_registers(struct mb_util_ctx * ctx) {
                                 break;
                         case mb_uint32:
                                 //if (ctx->reg_list[i].convert) ctx->reg_list[i].uint32_val *= ctx->reg_list[i].conversion;
+                                if(ctx->swap){
+                                ctx->reg_list[i].uint32_val=(((ctx->reg_list[i].uint32_val & 0x0000FFFF)<<16)|((ctx->reg_list[i].uint32_val & 0xFFFF0000))>>16);
+                                }
                                 printf("\t\t\"%s\":%u", ctx->reg_list[i].name, ctx->reg_list[i].uint32_val);
                                 break;
                         case mb_float:
@@ -287,8 +293,8 @@ void print_registers(struct mb_util_ctx * ctx) {
                         printf("\n");
                 }
         }
-        printf("\t}\n");
-        printf("}\n");
+     printf("\t}\n");
+     printf("}\n");
 }
 
 int main(int argc, char **argv) {
@@ -328,6 +334,8 @@ int main(int argc, char **argv) {
         struct mb_util_ctx mb_instance;
         mb_instance.reg_list = (reg_list_t *) malloc(sizeof(reg_list_t) * args_info.reg_given);
         mb_instance.reg_index = 0;
+        mb_instance.swap = args_info.swap_given;
+
         if (args_info.write_flag == true) {
                 DEBUG_MSG("Write registers\n");
                 mb_instance.rw = 'w';
