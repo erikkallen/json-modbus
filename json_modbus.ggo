@@ -11,7 +11,7 @@ option "port" p "Port of modbus device." default="502" int
 option "interval" i "Time between measurements in seconds" default="0" int optional
 option "debug" d "Show protocol debug information" flag off
 option "name" n "Name of the application" default="modbus" string
-option "include-date" - "add a date to the output" flag off
+option "include-date" - "add a date and time Info to the output" flag off
 option "conf-file" C "Configuration file" string optional
 option "reg" g "Define a register to read or write" string optional multiple
 option "timeout" t "Set the response timeout" default="1" int

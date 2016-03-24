@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <time.h>
 #include "cmdline.h"
 #include <signal.h>
 #include <regex.h>
@@ -216,9 +217,16 @@ void print_registers(struct mb_util_ctx * ctx) {
         //printf("Process registers: %d\n",ctx->reg_index);
         printf("{\n");
         printf("\t\"%s\": {\n", ctx->name);
+        if(ctx->include_date){
+            time_t mytime = time(NULL);
+            printf("\t\t\"TimeInfo\":");
+            printf(ctime(&mytime));
+        }
+
         for (int i=0; i<ctx->reg_index; i++) {
                 //printf("Reg list rw: %c\n",ctx->reg_list[i].rw);
                 //printf("Reading: reg: %hu\n",ctx->reg_list[i].address);
+
                 if (ctx->reg_list[i].convert && ctx->reg_list[i].type != mb_float_array) {
                         ctx->reg_list[i].float_val *= ctx->reg_list[i].conversion;
                         printf("\t\t\"%s\":%f", ctx->reg_list[i].name, ctx->reg_list[i].float_val);
@@ -327,6 +335,11 @@ int main(int argc, char **argv) {
                 if (cmdline_parser_config_file(args_info.conf_file_arg, &args_info, params) != 0) exit(1);
         }
 
+        // if (args_info.include_date_given) {
+        //                       /* call the config file parser */
+        //         if (cmdline_parser_config_file(args_info.conf_file_arg, &args_info, params) != 0) exit(1);
+        // }
+
         if (args_info.inputs_num != 1) {
                 cmdline_parser_print_help();
                 exit(1);
@@ -337,6 +350,7 @@ int main(int argc, char **argv) {
         mb_instance.reg_list = (reg_list_t *) malloc(sizeof(reg_list_t) * args_info.reg_given);
         mb_instance.reg_index = 0;
         mb_instance.swap = args_info.swap_given;
+        mb_instance.include_date = args_info.include_date_given;
 
         if (args_info.write_flag == true) {
                 DEBUG_MSG("Write registers\n");

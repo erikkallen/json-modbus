@@ -58,6 +58,7 @@ struct mb_util_ctx {
 	char name[51];
 	char rw;
   bool swap;
+  bool include_date;
   int (*read_regs)(modbus_t *, int addr, int nb, uint16_t *dest);
 
 };
