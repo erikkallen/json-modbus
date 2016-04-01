@@ -218,9 +218,13 @@ void print_registers(struct mb_util_ctx * ctx) {
         printf("{\n");
         printf("\t\"%s\": {\n", ctx->name);
         if(ctx->include_date){
+            char buffer[26];
             time_t mytime = time(NULL);
+            struct tm* tm_info;
+            tm_info = localtime(&mytime);
+            strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
             printf("\t\t\"TimeInfo\":");
-            printf("\"%s\"",ctime(&mytime));
+            printf("\"%s\",",buffer);
         }
 
         for (int i=0; i<ctx->reg_index; i++) {
