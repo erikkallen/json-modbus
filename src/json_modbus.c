@@ -224,7 +224,7 @@ void print_registers(struct mb_util_ctx * ctx) {
             tm_info = localtime(&mytime);
             strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
             printf("\t\t\"TimeInfo\":");
-            printf("\"%s\",",buffer);
+            printf("\"%s\",\n",buffer);
         }
 
         for (int i=0; i<ctx->reg_index; i++) {
