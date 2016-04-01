@@ -220,7 +220,7 @@ void print_registers(struct mb_util_ctx * ctx) {
         if(ctx->include_date){
             time_t mytime = time(NULL);
             printf("\t\t\"TimeInfo\":");
-            printf(ctime(&mytime));
+            printf("\"%s\"",ctime(&mytime));
         }
 
         for (int i=0; i<ctx->reg_index; i++) {
